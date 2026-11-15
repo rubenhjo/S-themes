@@ -142,9 +142,32 @@
       complete_export_track_count:master.tracks.length,
       complete_export_id:master.export_id};
   }
+  // Cloudflare passes a diagnostic error code to error-callback. It must never
+  // be discarded: domain/sitekey faults cannot be repaired by resetting a widget.
+  function turnstileIssue(rawCode,hostname=''){
+    const raw=String(rawCode??'');
+    const code=/^\d{5,8}$/.test(raw)?raw:'unknown';
+    const suffix=code==='unknown'?'':` (Cloudflare ${code})`;
+    const host=/^[a-z0-9.-]{1,253}$/i.test(hostname)?hostname:'this website';
+    if(code==='110200'||code==='400021')return {code,permanent:true,
+      message:`Cloudflare Turnstile has not authorized ${host}${suffix}. The website owner must add this exact domain to the Turnstile widget's allowed hostnames.`};
+    if(['110100','110110','400020','400070'].includes(code))return {code,permanent:true,
+      message:`Cloudflare Turnstile sitekey is invalid, missing or disabled${suffix}. The website owner must check TURNSTILE_SITE_KEY in Vercel and the widget in Cloudflare.`};
+    if(code==='200100')return {code,permanent:true,
+      message:`Cloudflare verification encountered a clock/cache problem${suffix}. Check device clock and reload the website without cache.`};
+    if(code==='200500')return {code,permanent:false,
+      message:`Cloudflare verification iframe could not load${suffix}. Check ad blockers, browser privacy extensions, network filtering and challenges.cloudflare.com.`};
+    if(code==='110600'||code==='110620')return {code,permanent:false,
+      message:`Cloudflare verification timed out${suffix}. Complete the challenge and retry.`};
+    if(code.startsWith('300')||code.startsWith('600'))return {code,permanent:false,
+      message:`Cloudflare challenge failed${suffix}. Try again in a normal browser without VPN or blocking extensions.`};
+    return {code,permanent:false,
+      message:`Cloudflare bot verification failed${suffix}. Check browser console for the Turnstile error code.`};
+  }
   function turnstileToken({turnstile,element,siteKey,action='music_upload',signal,timeoutMs=45000,retries=1}){
     aborted(signal);
-    if(!turnstile?.render||!turnstile?.remove) return Promise.reject(Error('Bot-beskyttelsen kunne ikke lastes.'));
+    if(!siteKey||typeof siteKey!=='string')return Promise.reject(Error('Cloudflare Turnstile sitekey is missing from /api/config. Check TURNSTILE_SITE_KEY in Vercel.'));
+    if(!turnstile?.render||!turnstile?.remove) return Promise.reject(Error('Bot-beskyttelsen kunne ikke lastes. Kontroller at challenges.cloudflare.com ikke blokkeres.'));
     return new Promise((resolve,reject)=>{
       let widgetId=null,settled=false,timer=null,tries=0,retryTimer=null;
       const clean=()=>{clearTimeout(timer);clearTimeout(retryTimer);signal?.removeEventListener('abort',onAbort);
@@ -162,7 +185,12 @@
       timer=setTimeout(()=>finish(new TimeoutError('Bot-verifisering tok for lang tid. Prøv igjen.')),timeoutMs);
       try{widgetId=turnstile.render(element,{sitekey:siteKey,action,
         callback:token=>{if(typeof token!=='string'||!token)finish(Error('Ugyldig verifisering'));else finish(null,token)},
-        'error-callback':()=>onProblem('Bot-verifisering mislyktes. Prøv igjen.'),
+        'error-callback':(errorCode)=>{
+          const issue=turnstileIssue(errorCode,String(root.location?.hostname||''));
+          console.warn('Cloudflare Turnstile widget error:',issue.code);
+          if(issue.permanent)finish(Error(issue.message));else onProblem(issue.message);
+          return true;
+        },
         'expired-callback':()=>onProblem('Bot-verifisering utløp. Prøv igjen.'),
         'timeout-callback':()=>onProblem('Bot-verifisering utløp. Prøv igjen.'),
         retry:'never','refresh-expired':'manual'});
@@ -177,5 +205,5 @@
     if(typeof trackId!=='string'||!trackId||trackId.length>160)throw Error('Invalid backup track ID');
     return 'audio/'+encodeURIComponent(trackId)+'.sseq';
   }
-  root.SigmaCore={CancelledError,TimeoutError,aborted,operation,classify,delay,retryTransient,sessionSnapshot,validResume,nextPlayableIndex,chooseTracks,assertDistinctMappings,partition,normalizePersonalState,validateTusURL,tusSessionKey,reorderVisibleSlots,partitionDS,dsPartManifest,turnstileToken,sseqBackupPath};
+  root.SigmaCore={CancelledError,TimeoutError,aborted,operation,classify,delay,retryTransient,sessionSnapshot,validResume,nextPlayableIndex,chooseTracks,assertDistinctMappings,partition,normalizePersonalState,validateTusURL,tusSessionKey,reorderVisibleSlots,partitionDS,dsPartManifest,turnstileIssue,turnstileToken,sseqBackupPath};
 })(globalThis);

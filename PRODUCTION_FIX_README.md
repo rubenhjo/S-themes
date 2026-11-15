@@ -55,3 +55,7 @@ The SQLite/browser simulations are NOT a live production Supabase test. Actual
 Storage integration, GitHub Actions scheduling, Cloudflare, and ROM compatibility
 must still be checked with the deployed system. This patch does not substitute
 for complete recovery of lost session receipts or human moderation.
+
+## Important: Cloudflare challenge failures are separate from upload/database problems
+
+For errors mentioning `Bot-verifisering mislyktes`, see `TURNSTILE_FIX_2026-11-15.md`. The error is raised by Cloudflare Turnstile in the browser before the upload request. Changing Supabase permissions or SSEQ bytes will not address it. Add the actual deployment hostname to the Cloudflare widget and set matching `TURNSTILE_HOSTNAME` in Vercel; the patch now exposes diagnostic error codes and recognizes mismatched server configuration.

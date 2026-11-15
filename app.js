@@ -364,6 +364,12 @@ function isStorageDuplicate(e){
 }
 let turnstileInFlight=false;
 async function getTurnstileToken(op){
+ // If Vercel expects a different hostname, even a solved widget will fail
+ // on the server. Detect that configuration error before asking the visitor
+ // to solve a challenge; hostname is public, never expose the secret key.
+ const serverHost=String(config.turnstileHostname||'').toLowerCase();
+ const browserHost=String(window.location.hostname||'').toLowerCase();
+ if(serverHost && serverHost!==browserHost)throw Error(`Cloudflare Turnstile hostname mismatch: current domain ${browserHost}, Vercel TURNSTILE_HOSTNAME=${serverHost}. Set the hostname to the actual production domain and authorize it in the Cloudflare widget.`);
  if(turnstileInFlight)throw Error('Bot verification already in progress');turnstileInFlight=true;
  $('#turnstilePanel').classList.remove('hide');
  try{return await SigmaCore.turnstileToken({turnstile:window.turnstile,element:$('#turnstileSlot'),siteKey:config.turnstileSiteKey,
@@ -522,7 +528,7 @@ async function uploadFiles(files){
   state.busy=false;$('#uploadBtn').disabled=false;$('#fileInput').value='';
   $('#turnstileSlot').replaceChildren();$('#turnstilePanel').classList.add('hide');clearProgress();
   if(op.canceled)toast('Upload canceled. No further files will be sent.');
-  else if(errors.length)modal(`<h2>Upload errors</h2><p class="hint">${done} songs published. Re-select failed files to retry.</p><p>${errors.map(escapeHTML).join('<p>')}</p>`);
+  else if(errors.length)modal(`<h2>Upload errors</h2><p class="hint">${done} file(s) submitted for verification. Re-select failed files to retry.</p><p>${errors.map(escapeHTML).join('<p>')}</p>`);
  }
 }
 function openSigmaExportPicker(){

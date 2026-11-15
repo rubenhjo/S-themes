@@ -39,6 +39,25 @@ test('Turnstile expires once, resets, and can complete a later verification',asy
  const token=await c.turnstileToken({turnstile:t,siteKey:'SITE',element:{},timeoutMs:1000,retries:1});
  assert.equal(token,'valid-token');assert.equal(reset,1);assert.equal(removed,1);
 });
+test('Turnstile reports unauthorized hostname immediately, instead of resetting forever',async()=>{
+ const c=core();let opts,reset=0,removed=0;
+ const t={render(_el,o){opts=o;queueMicrotask(()=>o['error-callback']('110200'));return 11},reset(){reset++},remove(){removed++}};
+ await assert.rejects(c.turnstileToken({turnstile:t,siteKey:'SITE',element:{},timeoutMs:500,retries:3}),e=>/110200/.test(e.message)&&/authorize|authorized|hostnames/.test(e.message));
+ assert.equal(reset,0);assert.equal(removed,1);
+ assert.equal(c.turnstileIssue('110200','sthemes.vercel.app').permanent,true);
+ assert.match(c.turnstileIssue('110200','sthemes.vercel.app').message,/sthemes\.vercel\.app/);
+});
+test('Turnstile reports blocked iframe code and performs one bounded retry',async()=>{
+ const c=core();let opts,reset=0,removed=0;
+ const t={render(_el,o){opts=o;queueMicrotask(()=>o['error-callback']('200500'));return 12},reset(){reset++;queueMicrotask(()=>opts['error-callback']('200500'))},remove(){removed++}};
+ await assert.rejects(c.turnstileToken({turnstile:t,siteKey:'SITE',element:{},timeoutMs:1000,retries:1}),e=>/200500/.test(e.message)&&/iframe/.test(e.message));
+ assert.equal(reset,1);assert.equal(removed,1);
+});
+test('Turnstile reports bad keys without retry and gives a safe fallback for unknown errors',()=>{
+ const c=core();assert.equal(c.turnstileIssue('110100').permanent,true);
+ assert.equal(c.turnstileIssue('600010').permanent,false);
+ assert.equal(c.turnstileIssue('anything').code,'unknown');
+});
 test('Turnstile waiting challenge is abortable and cannot return a late token',async()=>{
  const c=core();let callback,removed=0;const o=c.operation();
  const t={render(_el,options){callback=options.callback;return 42},remove(){removed++}};

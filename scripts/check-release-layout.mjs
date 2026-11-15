@@ -6,7 +6,7 @@ if(pkg.version!==lock.packages?.['']?.version){
  throw Error(`package-lock.json version ${lock.packages?.['']?.version||'missing'} does not match package.json ${pkg.version}; commit both files`);
 }
 const required=[
- 'index.html','app.js','sseq_codec.js','sseq_transcribe.js','sseq_transcribe_worker.js',
+ 'index.html','app.js','sigma_upload_monitor.js','sseq_codec.js','sseq_transcribe.js','sseq_transcribe_worker.js',
  'sseq_player.js','heartgold_bank_profiles.json','heartgold_bank_profiles.js',
  'api/catalog.js','api/config.js','api/upload-start.js','api/upload-finish.js',
  'supabase/migrations/20261115_sseq_only.sql','tests/browser_sseq_upload_pipeline.py',

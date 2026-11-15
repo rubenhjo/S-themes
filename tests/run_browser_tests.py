@@ -25,6 +25,7 @@ SUITES = [
     'browser_sseq_player.py',
     'browser_upload_dialog.py',
     'browser_transcription_worker.py',
+    'browser_progress_health.py',
     'browser_status.py',
 ]
 

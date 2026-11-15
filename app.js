@@ -281,8 +281,13 @@ async function loudnessMetrics(file,seconds=0,op=null){
 }
 function matchesMagic(bytes,ext){if(bytes.length<12)return false;const ascii=(a,b)=>String.fromCharCode(...bytes.slice(a,b));if(ext==='sseq')return ascii(0,4)==='SSEQ'&&ascii(16,20)==='DATA';if(ext==='wav')return ascii(0,4)==='RIFF'&&ascii(8,12)==='WAVE';if(ext==='flac')return ascii(0,4)==='fLaC';if(ext==='ogg'||ext==='opus')return ascii(0,4)==='OggS';if(ext==='m4a')return ascii(4,8)==='ftyp';if(ext==='aac')return bytes[0]===255&&(bytes[1]&246)===240;if(ext==='mp3')return ascii(0,3)==='ID3'||(bytes[0]===255&&(bytes[1]&224)===224);return false}
 const extMime={sseq:'application/octet-stream'};
-function setProgress(text,percent){state.activeProgress={text,percent};const root=$('#uploadProgress');if(!root)return;root.classList.remove('hide');$('#uploadProgressText').textContent=text;$('#uploadProgressFill').style.width=Math.min(100,Math.max(0,percent))+'%'}
-function clearProgress(){state.activeProgress=null;$('#uploadProgress')?.classList.add('hide')}
+function setProgress(text,percent,metrics={}){
+ state.activeProgress={text,percent};const root=$('#uploadProgress');if(!root)return;
+ root.classList.remove('hide');$('#uploadProgressText').textContent=text;
+ $('#uploadProgressFill').style.width=Math.min(100,Math.max(0,Number(percent)||0))+'%';
+ window.dispatchEvent(new CustomEvent('sigma:upload-progress',{detail:{text,percent,metrics}}));
+}
+function clearProgress(){state.activeProgress=null;$('#uploadProgress')?.classList.add('hide');window.dispatchEvent(new Event('sigma:upload-finished'))}
 function xhr(method,url,headers,body,onProgress,op){
  return new Promise((resolve,reject)=>{
   op.check();let settled=false;
@@ -335,7 +340,7 @@ async function tusTransfer(file,receipt,hash,op){
   const part=file.slice(offset,Math.min(offset+chunkSize,file.size));
   // If a PATCH fails transiently, obtain the server offset again before resending.
   try{await xhr('PATCH',location,{...headers,'Upload-Offset':String(offset),'Content-Type':'application/offset+octet-stream'},part,
-    n=>setProgress('Uploading in chunks',90*(offset+n)/file.size),op);consecutiveErrors=0}
+    n=>setProgress('Uploading in chunks',90*(offset+n)/file.size,{fraction:(offset+n)/file.size}),op);consecutiveErrors=0}
   catch(e){if(!['network','timeout','server'].includes(SigmaCore.classify(e))||++consecutiveErrors>6)throw e;
     await SigmaCore.delay(Math.min(8000,900*consecutiveErrors),op.signal);continue}
  }
@@ -343,7 +348,7 @@ async function tusTransfer(file,receipt,hash,op){
 }
 async function regularTransfer(file,receipt,op){
  await SigmaCore.retryTransient(()=>xhr('PUT',receipt.signedUrl,{'Content-Type':extMime[receipt.extension],'x-upsert':'false'},file,
-  (n,total)=>setProgress('Uploading audio',90*n/total),op),{signal:op.signal,attempts:3,baseDelay:800});
+  (n,total)=>setProgress('Uploading audio',90*n/total,{fraction:total?n/total:null}),op),{signal:op.signal,attempts:3,baseDelay:800});
 }
 let turnstileInFlight=false;
 async function getTurnstileToken(op){
@@ -401,13 +406,14 @@ async function uploadFiles(files){
  try{for(const sourceFile of arr){
   let file=sourceFile;
   if(op.canceled)break;
+  window.dispatchEvent(new CustomEvent('sigma:upload-source',{detail:{bytes:sourceFile.size,extension:String(sourceFile.name.split('.').pop()||'').toLowerCase()}}));
   let hash=null;
   try{
    const slot=Number($('#hgSlot').value),program=Number($('#hgProgram').value);
    setProgress('Converting '+sourceFile.name+' into HeartGold SSEQ',1);
    const converted=await window.SigmaTranscribe.convertFile(sourceFile,{
      slot,program,loop:$('#hgLoop').checked,profiles:window.SigmaBankProfiles,signal:op.signal,
-     onProgress:(label,part)=>setProgress(label,3+Math.round(45*part))
+     onProgress:(label,part)=>setProgress(label,3+Math.round(45*part),{fraction:label==='Transcribing melody and timing'?Math.min(1,Math.max(0,(part-.15)/.74)):null})
    });
    op.check();
    file=new File([converted.bytes],sourceFile.name.replace(/\.[^.]+$/,'')+'.sseq',{type:'application/octet-stream'});

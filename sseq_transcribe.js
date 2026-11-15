@@ -101,14 +101,40 @@ async function transcribeAudio(file,{signal,onProgress,maxDuration=360}={}){
  if(typeof AudioContext==='undefined'&&typeof webkitAudioContext==='undefined')throw Error('Audio decoding is not available in this browser');
  const Audio=window.AudioContext||window.webkitAudioContext;
  const ctx=new Audio();let decoded;
- try{onProgress?.('Decoding source audio',.05);const buffer=await file.arrayBuffer();if(signal?.aborted)throw Error('Conversion canceled');decoded=await ctx.decodeAudioData(buffer);}
- catch(e){throw Error('Could not decode audio source: '+e.message)}finally{await ctx.close().catch(()=>{})}
+ // AudioContext.decodeAudioData is not cancellable itself. Race its Promise with
+ // abort and a bounded timeout so the UI does not wait forever on a hung decoder.
+ const guarded=(work,ms)=>new Promise((resolve,reject)=>{
+  let settled=false;const done=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);
+   signal?.removeEventListener('abort',onAbort);error?reject(error):resolve(value)};
+  const onAbort=()=>done(Error('Conversion canceled'));
+  const timer=setTimeout(()=>done(Error('Audio decoding timed out; the browser may have stalled')),ms);
+  if(signal?.aborted){done(Error('Conversion canceled'));return;}
+  signal?.addEventListener('abort',onAbort,{once:true});
+  Promise.resolve().then(work).then(value=>done(null,value),error=>done(error));
+ });
+ try{
+  onProgress?.('Decoding source audio',.05);
+  const buffer=await guarded(()=>file.arrayBuffer(),30000);
+  decoded=await guarded(()=>ctx.decodeAudioData(buffer),file.size>12*1024*1024?180000:90000);
+  if(signal?.aborted)throw Error('Conversion canceled');
+ }catch(e){if(signal?.aborted)throw Error('Conversion canceled');throw Error('Could not decode audio source: '+e.message)}
+ finally{void ctx.close().catch(()=>{})}
  if(decoded.duration<.15||!Number.isFinite(decoded.duration)||decoded.duration>maxDuration)throw Error('Audio must be 0.15–'+maxDuration+' seconds long for this offline converter');
  const channels=decoded.numberOfChannels,sr=decoded.sampleRate,target=11025,len=Math.floor(decoded.duration*target),mono=new Float32Array(len);
+ // Chunking prevents long resampling loops from blocking click handlers,
+ // timers and cancel. A cancelled resample exits before creating a SSEQ file.
+ const sourceChannels=Array.from({length:Math.min(channels,2)},(_,c)=>decoded.getChannelData(c));
+ const channelWeight=1/sourceChannels.length;
  for(let i=0;i<len;i++){
+  if(i%8192===0){
+   if(signal?.aborted)throw Error('Conversion canceled');
+   if(i){onProgress?.('Preparing audio for note analysis',.07+.07*i/Math.max(1,len));
+    await new Promise(resolve=>setTimeout(resolve,0));}
+  }
   const idx=i*sr/target,base=Math.floor(idx),f=idx-base;
-  for(let c=0;c<Math.min(channels,2);c++){const ch=decoded.getChannelData(c);mono[i]+=(ch[base]||0)*(1-f)/Math.min(channels,2)+(ch[base+1]||0)*f/Math.min(channels,2)}
+  for(const ch of sourceChannels)mono[i]+=((ch[base]||0)*(1-f)+(ch[base+1]||0)*f)*channelWeight;
  }
+ if(signal?.aborted)throw Error('Conversion canceled');
  onProgress?.('Extracting note candidates',.15);
  const data=await runSpectrum(mono,target,{maxSeconds:maxDuration,signal,onProgress:f=>onProgress?.('Transcribing melody and timing',.15+.74*f)});
  let notes=smooth(data.frames,data.hopSeconds);

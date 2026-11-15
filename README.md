@@ -1,3 +1,5 @@
+> **Progress/health update from the uploaded S-themes-main source (2026-11-15):** animated decoding activity, measured note/upload percent, elapsed time, stall warnings and diagnostics. A bounded decoder wait and cooperative sample preparation improve cancellation responsiveness. See `PROGRESS_HEALTH_RELEASE.md`.
+
 > **v1.4.4 CI update:** Browser-upload testing previously served HTML at the Worker JavaScript URL, making a secure-origin Chromium transcription fail spuriously. The test server now serves both actual Worker files; a separate offline Chromium Worker regression verifies the scripts independently. The release also distinguishes `Catalog unavailable` from `Connecting`. These changes do **not** configure Supabase or deploy the service for you. If the live page reports `Catalog unavailable`, inspect the Vercel logs for `/api/catalog`, verify the required environment variables and apply/test the SQL migrations in staging. A GitHub `Ready` deployment is not proof of a working database. See `TEST_RESULTS.md`.
 
 # sigma-themes — SSEQ-only preview (v1.4.4)

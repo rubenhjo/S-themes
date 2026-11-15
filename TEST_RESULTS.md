@@ -33,3 +33,14 @@ Run `npm run verify`, `npm run test:example`, `npm run validate:pack -- examples
 - Automated Node validation: 88/88 passing.
 - Chromium Playwright: `python tests/browser_upload_dialog.py` PASS; page has no visible developer program/slot controls, upload dialog selects the target slot and loop, and the native file chooser opens.
 - GitHub Actions failures shown in the user screenshot have **not** been diagnosed without the remote failing step logs; a local `127.0.0.1` navigation can be blocked by this sandbox.
+
+
+### v1.4.4 — CI fixture / status repair (2026-11-15)
+
+- **PASS locally:** `npm ci`, `npm run verify` (88/88), `npm run test:sseq` (18/18), `npm run test:example`, package ZIP validation, `python tests/test_runner_timeout.py`.
+- **PASS locally (real Chromium background Worker via Blob):** `python tests/browser_transcription_worker.py` converted the distinct synthetic WAV and MP3 melodies into binary 59-byte SSEQ with correct note sequences. This verifies the real Worker script logic, without requiring a restricted local network origin.
+- **PASS locally (all 10 browser suites):** `python tests/run_browser_tests.py` completed all ten isolated Chromium suites (mocked backend).
+- **PASS locally (UI):** `python tests/browser_status.py`: catalog failure shows actionable error, and successful retry restores connected status.
+- **Fixed fixture code, GitHub rerun required:** In `SIGMA_BROWSER_USE_REAL_CRYPTO=1`, test HTTP handler serves real transcription worker JavaScript instead of generic HTML. The local sandbox cannot navigate 127.0.0.1, so **the GitHub secure-origin suite is not claimed PASS yet**.
+- **GitHub static-and-audio status:** Source archive passes all reproduced local steps. The exact GitHub failure remains unverified without a failing step log or authenticated GitHub repo snapshot. New CI steps report each independent failure clearly. Do not mark GitHub green until a new Actions run confirms it.
+- **Production limitations:** Actual Supabase storage, public catalog connection, Turnstile, validator schedule, native HeartGold playback and faithful multi-instrument transcription remain not independently validated.

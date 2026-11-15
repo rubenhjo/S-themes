@@ -1,4 +1,6 @@
-# sigma-themes — SSEQ-only preview (v1.4.3)
+> **v1.4.4 CI update:** Browser-upload testing previously served HTML at the Worker JavaScript URL, making a secure-origin Chromium transcription fail spuriously. The test server now serves both actual Worker files; a separate offline Chromium Worker regression verifies the scripts independently. The release also distinguishes `Catalog unavailable` from `Connecting`. These changes do **not** configure Supabase or deploy the service for you. If the live page reports `Catalog unavailable`, inspect the Vercel logs for `/api/catalog`, verify the required environment variables and apply/test the SQL migrations in staging. A GitHub `Ready` deployment is not proof of a working database. See `TEST_RESULTS.md`.
+
+# sigma-themes — SSEQ-only preview (v1.4.4)
 
 A multi-file **GitHub → Vercel** app with an account-free shared Supabase catalog, personal playlists/favorites/folders, actual SSEQ playback with Web Audio and a single **Export to Sigma Dex** ZIP workflow. This is **not** the standalone Paperwave/3-song HTML demo.
 

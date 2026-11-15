@@ -23,6 +23,9 @@ SUITES = [
     'browser_sigma_export.py',
     'browser_sseq_conversion.py',
     'browser_sseq_player.py',
+    'browser_upload_dialog.py',
+    'browser_transcription_worker.py',
+    'browser_status.py',
 ]
 
 

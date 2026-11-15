@@ -14,8 +14,14 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - name: Static analysis, API tests and ledger verification
-        run: npm run verify
+      - name: Validate release file layout
+        run: node scripts/check-release-layout.mjs
+      - name: Check JavaScript syntax
+        run: npm run lint
+      - name: Run Node API and SSEQ tests
+        run: npm test
+      - name: Verify issue ledger
+        run: node scripts/check-known-issues.mjs
       - name: SSEQ pack and browser-codec Node validation
         run: npm run test:sseq
       - name: Validate synthetic SSEQ example ZIP
@@ -39,6 +45,8 @@ jobs:
           - browser_sigma_export.py
           - browser_sseq_conversion.py
           - browser_sseq_player.py
+          - browser_transcription_worker.py
+          - browser_status.py
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

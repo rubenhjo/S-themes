@@ -2,6 +2,7 @@
 Cloud APIs are isolated mocks, not proof that Supabase is deployed.
 """
 import asyncio, json, os, threading, http.server
+from urllib.parse import urlsplit
 from playwright.async_api import async_playwright
 from browser_public import ROOT, fixture
 
@@ -48,15 +49,37 @@ async def main():
  result={}
  async with async_playwright() as p:
   browser=await p.chromium.launch(executable_path='/usr/bin/chromium' if os.path.exists('/usr/bin/chromium') else None,args=['--no-sandbox','--disable-gpu'])
-  class EmptyPage(http.server.BaseHTTPRequestHandler):
+  class TestAssets(http.server.BaseHTTPRequestHandler):
+   """Serve actual Worker scripts, not HTML disguised as JavaScript.
+
+   The original fixture served <html></html> for every URL. On a secure
+   localhost origin Chromium then creates a real transcription Worker, whose
+   request for /sseq_transcribe_worker.js receives HTML and fails. about:blank
+   tests did not catch this because creating a relative Worker there fails
+   immediately and the converter falls back to the main thread.
+   """
    def do_GET(self):
-    self.send_response(200);self.send_header('Content-Type','text/html');self.end_headers();self.wfile.write(b'<html></html>')
+    path=urlsplit(self.path).path
+    if path=='/':
+     body=b'<html><body>sigma-themes browser test origin</body></html>'
+     content_type='text/html; charset=utf-8'
+    elif path in ('/sseq_transcribe_worker.js','/sseq_transcribe.js'):
+     body=(ROOT/path.removeprefix('/')).read_bytes()
+     content_type='text/javascript; charset=utf-8'
+    else:
+     self.send_error(404,'Asset not found');return
+    self.send_response(200)
+    self.send_header('Content-Type',content_type)
+    self.send_header('Cache-Control','no-store')
+    self.send_header('Content-Length',str(len(body)))
+    self.end_headers();self.wfile.write(body)
    def log_message(self,*args):pass
-  server=http.server.ThreadingHTTPServer(('127.0.0.1',0),EmptyPage)
+  server=http.server.ThreadingHTTPServer(('127.0.0.1',0),TestAssets)
   thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
   realCrypto=(os.environ.get('SIGMA_BROWSER_USE_REAL_CRYPTO')=='1')
   for fname in ('melody.wav','melody_b.mp3'):
    page=await browser.new_page()
+   page.on('console',lambda msg: print('browser-console',fname,msg.type,msg.text,flush=True) if msg.type=='error' else None)
    if realCrypto:
     await page.goto(f'http://127.0.0.1:{server.server_port}/',wait_until='domcontentloaded',timeout=7000)
     assert await page.evaluate('!!crypto.subtle'), 'Secure localhost Web Crypto unavailable'

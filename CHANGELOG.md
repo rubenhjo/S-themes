@@ -1,3 +1,10 @@
+## v1.4.4 — 2026-11-15 (GitHub CI and connection-status repair)
+- Fix the secure-origin Playwright SSEQ upload fixture: its temporary HTTP server now serves the actual `sseq_transcribe_worker.js` and imported `sseq_transcribe.js` instead of returning an HTML document to all Worker requests. This fixes a deterministic false negative in the test fixture, not a failure proven in production.
+- Add `browser_transcription_worker.py` verifying actual Chromium background-Worker WAV/MP3→SSEQ conversion with synthetic audio without relying on restricted localhost networking.
+- Add `browser_status.py` and client status handling so configuration-ready/catalog-unavailable displays a meaningful error rather than claiming `Connecting` indefinitely, and returns to `Shared library` after catalog recovery.
+- Split the formerly combined `static-and-audio` verification into separate file-layout, syntax, Node tests and ledger steps to make future GitHub failures diagnosable. Add `scripts/check-release-layout.mjs` to flag missing files or mismatched package/lock versions after multi-pass GitHub browser uploads.
+- Keep SSEQ-only storage/export, UI, bank validation and original song data unchanged. Real Supabase/Vercel credentials, full recording quality and original game playback still require separate live validation.
+
 ## v1.4.3 – 2026-11-15
 - Hide the developer-oriented HeartGold bank selection section from the main page.
 - Add a compact upload dialog for target game slot and loop; choose compatible bank programs automatically.

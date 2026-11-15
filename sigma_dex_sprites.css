@@ -1,0 +1,33 @@
+/* Sigma-dex sprites on the app background; no independent sprite section.
+   UI layers and their controls always stay interactive. */
+.sigma-spritefield {
+  position:fixed; inset:0; width:100vw; height:100dvh;
+  z-index:4; pointer-events:none; overflow:hidden; contain:layout paint;
+}
+.sigma-spritefield .sigma-dex-float {
+  position:fixed; display:block; height:auto; max-width:none; object-fit:contain;
+  image-rendering:pixelated; pointer-events:none; opacity:.44;
+  filter:drop-shadow(0 3px 4px rgba(44,40,64,.19));
+  transform:translate3d(0,0,0) scaleX(var(--flips,1));
+  animation:sigma-dex-drift var(--dur,18s) ease-in-out var(--delay,0s) infinite alternate;
+  will-change:transform;
+}
+@keyframes sigma-dex-drift {
+  from { transform:translate3d(0,0,0) scaleX(var(--flips,1)) rotate(-2deg); }
+  to { transform:translate3d(var(--dx,9px),var(--dy,-14px),0) scaleX(var(--flips,1)) rotate(3deg); }
+}
+/* Existing panels are opaque enough for readable content; no image intercepts taps. */
+.app { z-index:3; }
+.sidebar { z-index:42; }
+.player { z-index:25; }
+.hero,.panel,.tracks { background:rgba(255,255,255,.92); }
+@media(max-width:750px) {
+  .sigma-spritefield .sigma-dex-float {opacity:.40; filter:drop-shadow(0 2px 3px rgba(44,40,64,.16));}
+}
+@media(prefers-reduced-motion:reduce) {
+  .sigma-spritefield .sigma-dex-float {animation:none!important;will-change:auto!important;}
+}
+/* Keep artwork beneath all reading surfaces and interactive controls. Because
+   .app/.content were stacking contexts, children could not outrank spritefield. */
+.app, .content, .inner {z-index:auto!important}
+.hero, .panel, .tracks, .topline, .section-head, #playlistCards {position:relative;z-index:8!important}

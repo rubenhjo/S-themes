@@ -1,4 +1,4 @@
-# sigma-themes — SSEQ-only preview (v1.4.2)
+# sigma-themes — SSEQ-only preview (v1.4.3)
 
 A multi-file **GitHub → Vercel** app with an account-free shared Supabase catalog, personal playlists/favorites/folders, actual SSEQ playback with Web Audio and a single **Export to Sigma Dex** ZIP workflow. This is **not** the standalone Paperwave/3-song HTML demo.
 
@@ -85,3 +85,7 @@ For Playwright tests, install `playwright` and Chromium locally. `tests/browser_
 ## Instrument data and rights
 
 The uploaded HeartGold US archive is **private calibration input**, not a file to publish. Derive metadata using `python scripts/build_bank_profiles.py /path/to/HeartGold_instrumentfiler_US.zip heartgold_bank_profiles.json`; sync the generated JS metadata profile as instructed by the generator. **Do not commit** SBNK/SWAR/SDAT/ROM bytes or Nintendo sample banks. Only users' self-produced compositions should be uploaded. This repository makes **no modifications** to Sigma Dex, Origin HeartGold, hg-engine, or the game's ROM.
+
+## v1.4.3 upload UI correction
+
+The previously exposed HeartGold music-slot/instrument panel is no longer on the main page. The **Upload music** dialog now asks only for a target game music slot and optional loop setting. Instrument programs are selected automatically using validated bank metadata. The internal HeartGold SBNK bank validation and SSEQ-only export remain unchanged.

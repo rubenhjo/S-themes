@@ -1,3 +1,8 @@
+## v1.4.3 – 2026-11-15
+- Hide the developer-oriented HeartGold bank selection section from the main page.
+- Add a compact upload dialog for target game slot and loop; choose compatible bank programs automatically.
+- Keep strict SSEQ-only upload/export behavior.
+
 # QC continuation — v1.4.2 SSEQ preview (2026-11-15)
 
 - **Automatic instrument compatibility fix:** `sseq_transcribe.js` no longer unconditionally assigns an out-of-range selected program to voice 1. It falls back to a playable program in the *same genuine HeartGold bank* and retains all note events. The user sees the substitution; songs with no compatible program still fail closed.

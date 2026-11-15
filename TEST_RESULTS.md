@@ -27,3 +27,9 @@ Testing date: 2026-11-15. Only runs witnessed in the current workspace are marke
 Run `npm run verify`, `npm run test:example`, `npm run validate:pack -- examples/sigma-dex-example-music.zip`, and `python tests/browser_sseq_conversion.py`. The separate `tests/browser_sseq_upload_pipeline.py` uses mocked WebCrypto when `SIGMA_BROWSER_USE_REAL_CRYPTO` is unset, and requires real localhost secure context when it is `1` (used by GitHub CI). Real staging must be tested separately.
 
 **Do not reuse v1.3 reports that refer to WAV/IMA-ADPCM exports as present-day SSEQ evidence.** That material is archived in `docs/ARCHIVED_TEST_RESULTS_v1.3.md`.
+
+### v1.4.3 – hidden HeartGold developer panel
+
+- Automated Node validation: 88/88 passing.
+- Chromium Playwright: `python tests/browser_upload_dialog.py` PASS; page has no visible developer program/slot controls, upload dialog selects the target slot and loop, and the native file chooser opens.
+- GitHub Actions failures shown in the user screenshot have **not** been diagnosed without the remote failing step logs; a local `127.0.0.1` navigation can be blocked by this sandbox.

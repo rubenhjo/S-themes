@@ -582,6 +582,28 @@ function dragEnd(){const d=drag;drag=null;if(!d)return;d.row.classList.remove('d
 function queueDragStart(e){const handle=e.target.closest('.queue-handle');if(!handle||e.button!==0)return;const row=handle.closest('[data-queue-row]');queueDrag={from:Number(row.dataset.queueRow),startY:e.clientY,target:null};handle.setPointerCapture(e.pointerId);e.preventDefault()}
 function queueDragMove(e){if(!queueDrag)return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-queue-row]');if(target)queueDrag.target=Number(target.dataset.queueRow)}
 function queueDragEnd(){if(!queueDrag)return;const d=queueDrag;queueDrag=null;if(d.target!==null)moveQueue(d.from,d.target)}
+// Keep game-bank IDs internal. A public user chooses a destination slot when uploading,
+// while program compatibility is selected automatically by the SSEQ converter.
+function openUploadMusicDialog(){
+ if(state.busy)return toast('Another operation is in progress',true);
+ modal(`<h2>Upload music</h2><p class="hint">Choose the in-game destination for your music. MP3, WAV and other supported sources are converted to validated SSEQ before upload. No source audio is stored.</p>
+  <label for="uploadTargetSlot">Game music slot</label>
+  <select id="uploadTargetSlot" aria-label="Game music slot"></select>
+  <label class="compact-check" style="display:flex;gap:9px;margin:14px 0;align-items:center"><input id="uploadRepeat" type="checkbox"> Loop sequence</label>
+  <button id="chooseMusicFiles" type="button" class="btn primary">＋ Choose music files</button>`);
+ const internalSlot=$('#hgSlot');
+ const chosen=$('#uploadTargetSlot');
+ chosen.replaceChildren(...Array.from(internalSlot.options,option=>option.cloneNode(true)));
+ chosen.value=internalSlot.value;
+ $('#uploadRepeat').checked=$('#hgLoop').checked;
+ $('#chooseMusicFiles').onclick=()=>{
+  internalSlot.value=chosen.value;
+  internalSlot.dispatchEvent(new Event('change'));
+  $('#hgLoop').checked=$('#uploadRepeat').checked;
+  closeModal();
+  $('#fileInput').click();
+ };
+}
 // HeartGold slot/program options derived from the user's local SBNK and bankkart.json.
 function setupHeartGoldTargets(){
  const select=$('#hgSlot'),p=$('#hgProgram');if(!select||!p||!window.SigmaBankProfiles)throw Error('HeartGold bank profile unavailable');
@@ -599,7 +621,7 @@ setupHeartGoldTargets();
 // Browser events.
 $('#menuBtn').onclick=()=>{$('#sidebar').classList.toggle('open');$('#scrim').classList.toggle('hide')};$('#scrim').onclick=closeMenu;
 $('#refreshBtn').onclick=()=>void refreshService();$('#newPlaylist').onclick=createPlaylist;$('#newFolder').onclick=()=>newFolder();$('#sigmaExportBtn').onclick=openSigmaExportPicker;
-$('#uploadBtn').onclick=()=>state.ready?$('#fileInput').click():toast('Configure Vercel and Supabase to enable uploads',true);$('#cancelUpload').onclick=cancelUpload;
+$('#uploadBtn').onclick=()=>state.ready?openUploadMusicDialog():toast('Configure Vercel and Supabase to enable uploads',true);$('#cancelUpload').onclick=cancelUpload;
 $('#fileInput').onchange=e=>void uploadFiles(e.target.files);$('#backupBtn').onclick=()=>openExportPicker('backup');$('#restoreBtn').onclick=()=>$('#backupInput').click();$('#backupInput').onchange=e=>void importBackup(e.target.files[0]);
 $('#heroPlay').onclick=()=>{const ids=viewTracks().map(t=>t.id);if(!ids.length)return toast('No songs in this collection');setQueue(ids,false);void playAt(0)};
 $('#heroShuffle').onclick=()=>{const ids=viewTracks().map(t=>t.id);if(!ids.length)return toast('No songs in this collection');setQueue(ids,true);void playAt(0)};

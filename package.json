@@ -1,6 +1,6 @@
 {
   "name": "sigma-themes",
-  "version": "1.4.2-sseq-preview",
+  "version": "1.4.3-sseq-preview",
   "private": true,
   "type": "module",
   "description": "Account-free SSEQ-only shared music library; experimental browser audio transcription",

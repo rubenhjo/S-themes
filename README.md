@@ -49,6 +49,8 @@ The instrument dropdown is a **preference** for the lead voice. If the preferred
    - `supabase/migrations/20261114_qc7_validation_quota.sql`
    - `supabase/migrations/20261115_validation_claim_lease.sql`
    - `supabase/migrations/20261115_sseq_only.sql` (**SSEQ-only reservation/worker/Storage cap + direct-anon RLS filter**).
+   - `supabase/migrations/20261115_upload_pipeline_permissions.sql` (**explicit service_role permissions, no anonymous uploads**).
+   Verify with `supabase/VERIFY_PRODUCTION.sql`.
    Do not apply old migrations *after* this one. Migration effects on existing projects must be backed up and tested. Legacy MP3/WAV rows remain privately stored for a future resumable migration; migration is **not** implemented.
 4. Set Vercel production/preview environment variables according to `.env.example`: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_HOSTNAME`, `UPLOAD_HMAC_SECRET`, `CRON_SECRET`. Only public keys may reach the frontend. Create the Turnstile widget for the exact live domain. Use a strong, distinct secret for each server-only value.
 5. Configure GitHub Actions repository secrets `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Enable `.github/workflows/audio-validator.yml`. Publication occurs after this worker runs, not immediately when a browser finishes uploading. There is no guaranteed low-latency queue: scheduled Actions may be delayed or skipped.

@@ -106,7 +106,7 @@
       if(/decod|converting |reading audio/.test(text))return {index:0,kind:'decode',description:'Decoding audio · the browser cannot measure this step.'};
       if(/transcrib|melody|note candidate|extracting|preparing audio|loudness/.test(text))return {index:1,kind:'notes',description:'Detecting notes and timing in your recording.'};
       if(/building sseq|validated existing sseq|calculating sha|sha-256/.test(text))return {index:2,kind:'sequence',description:'Building and checking the SSEQ sequence.'};
-      if(/uploading audio|uploading in chunks/.test(text))return {index:3,kind:'transfer',description:'Uploading SSEQ bytes to storage.'};
+      if(/uploading sseq|uploading audio|uploading in chunks/.test(text))return {index:3,kind:'transfer',description:'Uploading SSEQ bytes to storage.'};
       if(/upload|transfer|permission|bot verification|turnstile/.test(text))return {index:3,kind:'request',description:'Preparing a secure upload.'};
       if(/validat|verif|awaiting trusted|server/.test(text))return {index:4,kind:'verify',description:'Waiting for SSEQ verification by the server.'};
       return {index:Math.max(0,stage),kind:'other',description:'Working on the current operation.'};

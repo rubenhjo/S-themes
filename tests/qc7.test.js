@@ -70,7 +70,7 @@ test('ST-035 quota migration serializes all public reservations and counts real 
 test('ST-037 new reservations are checked with upload-status before being re-used',()=>{
  const source=readFileSync(new URL('app.js',root),'utf8');
  assert.match(source,/getJSON\('\/api\/upload-status'/);
- assert.match(source,/if\(status\.status==='pending'\)reservation=candidate/);
+ assert.match(source,/if\(status\.status==='pending'\)\{reservation=candidate;resumedReservation=true;\}/);
  assert.match(source,/if\(!reservation\)sessionRemove\('sigma-upload-'/);
 });
 

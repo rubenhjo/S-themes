@@ -57,6 +57,7 @@ jobs:
         suite:
           - browser_public.py
           - browser_sseq_upload_pipeline.py
+          - browser_upload_recovery.py
           - browser_upload_dialog.py
           - browser_catalog_integrity.py
           - browser_sprite_visibility.py

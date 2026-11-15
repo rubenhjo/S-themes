@@ -3,7 +3,13 @@ import {parseSseq,getProfile} from '../lib/sseq-server.js';
 import {jsonBody,env,sb,rpc,err,safeError,requireMethod,hmac,verifyReceipt,validUuid,BUCKET,MAX_UPLOAD_BYTES,sniff,sanitizeTitle,extensionMime} from '../lib/common.js';
 async function checkObject(row,slot){
  const {url,key}=env();const response=await fetch(url+'/storage/v1/object/authenticated/'+BUCKET+'/'+row.storage_path,{headers:{apikey:key,Authorization:'Bearer '+key},signal:AbortSignal.timeout(60000)});
- if(!response.ok)throw err(400,'Uploaded file is missing');
+ if(response.status===404)throw err(404,'Uploaded file is missing');
+ if(!response.ok){
+  // A 403 or 500 is NOT proof that Storage lacks the object. Treating it as
+  // missing causes an unsafe duplicate PUT during recovery.
+  console.error('Storage read failed during upload finalization:',response.status);
+  throw err(502,'Could not verify stored SSEQ; check server storage permissions');
+ }
  const contentLength=Number(response.headers.get('content-length'));
  if(contentLength>MAX_UPLOAD_BYTES)throw err(413,'Uploaded file is too large');
  let bytes=0,first=Buffer.alloc(0),chunks=[];const hash=createHash('sha256');

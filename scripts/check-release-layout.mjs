@@ -9,7 +9,9 @@ const required=[
  'index.html','app.js','sigma_upload_monitor.js','sseq_codec.js','sseq_transcribe.js','sseq_transcribe_worker.js',
  'sseq_player.js','heartgold_bank_profiles.json','heartgold_bank_profiles.js',
  'api/catalog.js','api/config.js','api/upload-start.js','api/upload-finish.js',
- 'supabase/migrations/20261115_sseq_only.sql','tests/browser_sseq_upload_pipeline.py',
+ 'supabase/migrations/20261115_sseq_only.sql',
+ 'supabase/migrations/20261115_upload_pipeline_permissions.sql','supabase/VERIFY_PRODUCTION.sql',
+ 'tests/browser_sseq_upload_pipeline.py','tests/browser_upload_recovery.py','tests/upload-reliability.test.js',
  'KNOWN_ISSUES.md','QC_REPORT.md'
 ];
 const missing=required.filter(name=>!existsSync(new URL('../'+name,import.meta.url)));

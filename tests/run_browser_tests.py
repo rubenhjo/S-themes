@@ -19,6 +19,7 @@ SUITES = [
     # The historical large-MP3/TUS upload case is obsolete for <=64 KiB SSEQ.
     # Regression remains in source history; new SSEQ file-input path is tested below.
     'browser_sseq_upload_pipeline.py',
+    'browser_upload_recovery.py',
     'browser_catalog_integrity.py',
     'browser_sigma_export.py',
     'browser_sseq_conversion.py',

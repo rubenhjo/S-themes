@@ -301,7 +301,13 @@ function xhr(method,url,headers,body,onProgress,op){
    request.timeout=90000;
    request.upload.onprogress=e=>{if(!op.canceled&&e.lengthComputable)onProgress?.(e.loaded,e.total)};
    request.onload=()=>{if(op.canceled)return complete(new SigmaCore.CancelledError());if(request.status>=200&&request.status<300)return complete(null,request);
-     const e=new Error(`${method} request failed (${request.status})`);e.status=request.status;complete(e)};
+     // Storage PUT is cross-origin and is NOT logged as an API error by Vercel.
+     // Show the public Storage error code/message, not signed URLs or tokens.
+     let details='';
+     try{const info=JSON.parse(request.responseText||'{}');
+       details=String(info.message||info.error||info.code||'').slice(0,180)}catch{}
+     const e=new Error(`${method} request failed (${request.status})${details?': '+details:''}`);
+     e.status=request.status;e.storageError=details;complete(e)};
    request.onerror=()=>{const e=new Error('Network interrupted');e.code='NETWORK_ERROR';complete(op.canceled?new SigmaCore.CancelledError():e)};
    request.ontimeout=()=>complete(new SigmaCore.TimeoutError('Transfer timed out'));
    request.onabort=()=>complete(new SigmaCore.CancelledError());
@@ -347,8 +353,14 @@ async function tusTransfer(file,receipt,hash,op){
  op.check();sessionRemove(key);
 }
 async function regularTransfer(file,receipt,op){
- await SigmaCore.retryTransient(()=>xhr('PUT',receipt.signedUrl,{'Content-Type':extMime[receipt.extension],'x-upsert':'false'},file,
-  (n,total)=>setProgress('Uploading audio',90*n/total,{fraction:total?n/total:null}),op),{signal:op.signal,attempts:3,baseDelay:800});
+ // Never blindly retry a PUT. If the first request reached Storage but its
+ // acknowledgement was lost, retrying the SAME no-upsert path gets HTTP 400.
+ // The caller checks the authoritative server-side object first.
+ return xhr('PUT',receipt.signedUrl,{'Content-Type':extMime[receipt.extension],'x-upsert':'false'},file,
+  (n,total)=>setProgress('Uploading SSEQ',90*n/total,{fraction:total?n/total:null}),op);
+}
+function isStorageDuplicate(e){
+ return (e?.status===400||e?.status===409)&&/already exists|resourcealreadyexists|keyalreadyexists/i.test(String(e?.storageError||e?.message));
 }
 let turnstileInFlight=false;
 async function getTurnstileToken(op){
@@ -426,7 +438,7 @@ async function uploadFiles(files){
    const metadata=await audioMetadata(sourceFile);op.check();
    metadata.slot=slot;metadata.duration=converted.parsed.durationTicks*60/(converted.parsed.tempo*48);
    metadata.title=metadata.title||sourceFile.name.replace(/\.[^.]+$/,'');
-   let reservation;
+   let reservation, resumedReservation=false;
    const persisted=sessionGet('sigma-upload-'+hash);
    if(persisted){
     try{
@@ -436,7 +448,7 @@ async function uploadFiles(files){
       const status=await getJSON('/api/upload-status',{method:'POST',signal:op.signal,headers:{'Content-Type':'application/json'},
        body:JSON.stringify({uploadId:candidate.uploadId,receipt:candidate.receipt})});
       op.check();
-      if(status.status==='pending')reservation=candidate;
+      if(status.status==='pending'){reservation=candidate;resumedReservation=true;}
       else if(status.status==='validating'||status.status==='processing'){
        sessionRemove('sigma-upload-'+hash);toast(file.name+': awaiting server validation');continue;
       }
@@ -456,11 +468,41 @@ async function uploadFiles(files){
     op.check();reservation.created=Date.now();sessionSet('sigma-upload-'+hash,JSON.stringify(reservation));
    }
    op.reservation=reservation;op.check();
-   if(file.size>6*1024*1024)await tusTransfer(file,reservation,hash,op);
-   else await regularTransfer(file,reservation,op);
-   op.check();setProgress('Validating SSEQ and HeartGold slot on server',94);
-   const completion=await getJSON('/api/upload-finish',{method:'POST',signal:op.signal,headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({uploadId:reservation.uploadId,receipt:reservation.receipt,metadata})});
+   const finishUpload=()=>getJSON('/api/upload-finish',{method:'POST',signal:op.signal,headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({uploadId:reservation.uploadId,receipt:reservation.receipt,metadata})});
+   const finishIfStored=async()=>{
+     setProgress('Checking saved SSEQ before retry',93);
+     try{return await finishUpload()}
+     catch(e){
+       // Only a real 404 from Storage means there is no object. A 403, a
+       // database failure, a checksum mismatch or invalid SSEQ is NOT missing.
+       if(e.status===404&&e.message==='Uploaded file is missing')return null;
+       throw e;
+     }
+   };
+   let completion=null;
+   if(resumedReservation)completion=await finishIfStored();
+   if(!completion){
+     try{await regularTransfer(file,reservation,op)}
+     catch(e){
+       // HTTP 400 conflict or lost PUT acknowledgement can mean Storage
+       // already has the exact bytes. Finish performs full size/hash/SSEQ
+       // checks before accepting them. Never use x-upsert:true to "fix" it.
+       const uncertain=['network','timeout','server'].includes(SigmaCore.classify(e));
+       if(!isStorageDuplicate(e)&&!uncertain)throw e;
+       completion=await finishIfStored();
+       if(!completion){
+         if(!uncertain)throw e;
+         // Server definitively reported 404. One bounded retry is safe.
+         await regularTransfer(file,reservation,op).catch(async retryError=>{
+           if(!isStorageDuplicate(retryError))throw retryError;
+           completion=await finishIfStored();
+           if(!completion)throw retryError;
+         });
+       }
+     }
+     if(!completion){op.check();setProgress('Validating SSEQ and HeartGold slot on server',94);completion=await finishUpload();}
+   }
    op.check();sessionRemove('sigma-upload-'+hash);if(op.reservation?.uploadId)sessionRemove(sessionKey(hash,op.reservation.uploadId));
    op.reservation=null;op.hash=null;done++;setProgress('Awaiting trusted SSEQ validation',100);
    const pendingJob={uploadId:reservation.uploadId,receipt:reservation.receipt,title:metadata.title};

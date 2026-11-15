@@ -1,0 +1,36 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.vercel/
+.DS_Store
+__pycache__/
+*.pyc
+*.log
+coverage/
+test-results/
+playwright-report/
+*.wav
+*.mp3
+*.flac
+*.opus
+*.ogg
+*.m4a
+*.aac
+*.zip
+!examples/sigma-dex-example-music.zip
+# Real audio and raw test fixtures must not be committed.
+
+# Generated UI screenshots; inspect locally, don't commit
+/tests/public-*.png
+/tests/browser-results.json
+/tests/unit-results.txt
+/tests/_ffprobe_audio.wav
+
+# Only reproducible ORIGINAL/SYNTHETIC audio fixtures are source-controlled.
+# Without these exceptions GitHub Actions cannot run the WAV/MP3 → SSEQ tests.
+!/tests/fixtures/melody.wav
+!/tests/fixtures/melody.mp3
+!/tests/fixtures/melody_b.wav
+!/tests/fixtures/melody_b.mp3
+!/tests/fixtures/melody_with_chords.wav

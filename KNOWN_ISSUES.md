@@ -739,20 +739,174 @@ Status kan være OPEN, IN PROGRESS, FIXED – NOT VERIFIED, VERIFIED, BLOCKED el
 - **Evidence:** NOT TESTED — delt mappesynk krever design av autorisert API og ekte Supabase-tester.
 - **Remaining limitations:** Brukere kan dele egne strukturer med eksport- og backuppakker, men det er ikke en global mapperedigerer.
 
+### ST-051 — WAV/MP3 stereo-miks mister akkorder ved transkripsjon
+
+- **Severity:** P1
+- **Status:** OPEN
+- **Discovered:** 2026-11-15, SSEQ-only transkripsjonsrunde
+- **Reproduction:** En test med melodi og tre akkordtoner genererte bare melodinotene, selv om WAV- og MP3-enkelmelodier ble riktige.
+- **Impact:** Brukerens viktige flerstemte arrangement forsvinner i SSEQ.
+- **Affected files:** `sseq_transcribe.js`
+- **Root cause:** Utrent spektral topp-deteksjon kan ikke separere flere instrumentstemmer.
+- **Change:** v1.4.1: spektraltranskripsjon utvidet til opptil fire kandidatstemmer. Syntetisk akkordfixture gir C3, E3 og G3 i SSEQ sammen med hovedmelodien, men også falske fragmenter. Ingen trent flerstemmemodell eller produksjonskvalitet er på plass.
+- **Regression test:** tests/browser_sseq_conversion.py
+- **Evidence:** PASS syntetisk delvis akkorddekning (C3/E3/G3), FAIL kvalitetsport for ren/gjenkjennelig komplett flerstemmetranskripsjon; ekstra falske toner
+- **Remaining limitations:** Trent multitrack-modell og arrangementsevaluering mangler.
+
+### ST-052 — SSEQ fra opptak er ikke testet i original HeartGold
+
+- **Severity:** P1
+- **Status:** BLOCKED
+- **Discovered:** 2026-11-15, SSEQ-only transkripsjonsrunde
+- **Reproduction:** Ingen lovlig original HeartGold-kopi eller melonDS-romtest var tilgjengelig; del av ST-010 med nytt akseptansekriterium.
+- **Impact:** Spillbarhet og reell SDAT-størrelse er ukjent.
+- **Affected files:** `sseq_codec.js, HEARTGOLD_INTEGRATION.md`
+- **Root cause:** Strukturell og syntaktisk SSEQ-validering er ikke en emulator-/ROM-test.
+- **Change:** Leverer SSEQ, private bankreferansekart og konkrete lokale teststeg, ingen falsk spillpatch.
+- **Regression test:** tests/sseq-core.test.js (kun lokalt format)
+- **Evidence:** BLOCKED – ingen spilltest utført
+- **Remaining limitations:** Mangler testrom/build og original slotbank-avspilling; ST-010 beholdt.
+
+### ST-053 — Gammelt WAV/MP3-bibliotek er ikke migrert med uendrede ID-er
+
+- **Severity:** P1
+- **Status:** OPEN
+- **Discovered:** 2026-11-15, SSEQ-only transkripsjonsrunde
+- **Reproduction:** Tidligere publiserte lydfiler skjules av SSEQ-only katalogen, men automatisk migrering er ikke skrevet.
+- **Impact:** Eldre låter er ikke tilgjengelige som SSEQ før sikker migrering.
+- **Affected files:** `api/catalog.js, supabase/migrations/20261115_sseq_only.sql`
+- **Root cause:** Konvertering av eldre objekt krever sikret kø, transkripsjon, revision/hash og atomisk referansebevaring.
+- **Change:** Gamle private objekter bevares uendret for senere migrering.
+- **Regression test:** NOT TESTED – migrasjonsarbeider finnes ikke
+- **Evidence:** OPEN – faktisk migrering og rollback må utvikles og testes
+- **Remaining limitations:** Ikke slett tidligere Storage før ny SSEQ og spor-ID-er er validert.
+
+### ST-054 — Webavspiller har ikke autentiske HeartGold-klanger
+
+- **Severity:** P2
+- **Status:** OPEN
+- **Discovered:** 2026-11-15, SSEQ-only transkripsjonsrunde
+- **Reproduction:** Spilleren parser SSEQ-noter, men benytter generiske Web Audio-oscillatorer.
+- **Impact:** Hørbar forhåndslytting kan avvike fra det originale spillet.
+- **Affected files:** `sseq_player.js, heartgold_bank_profiles.json`
+- **Root cause:** Originale SWAR-samples distribueres ikke og ingen fullverdig lisensiert bank-synth finnes.
+- **Change:** Ekte SSEQ-noter, tempo, program og varighet spilles med generisk synth.
+- **Regression test:** tests/browser_sseq_conversion.py
+- **Evidence:** PASS syntetiske noter/play/pause; NOT TESTED faktisk HeartGold-klang
+- **Remaining limitations:** Korrekt instrumenttimbre krever godkjente samples og emulatortest.
+
+### ST-055 — SSEQ-parser støtter bare avgrenset opcode-subsett
+
+- **Severity:** P2
+- **Status:** OPEN
+- **Discovered:** 2026-11-15, SSEQ-only transkripsjonsrunde
+- **Reproduction:** Gyldige eldre SSEQ-filer med avanserte betingede/variabelhendelser blir avvist selv om Nitro bruker disse.
+- **Impact:** Enkelte ekte SSEQ-innlastinger avvises fremfor godkjenning.
+- **Affected files:** `sseq_codec.js`
+- **Root cause:** Fail-closed parser implementerer ikke hele Nitro-sekvensinstruksjonssettet.
+- **Change:** Uklar/ikke-støttet kommando avvises eksplisitt, ingen utrygg aksept.
+- **Regression test:** tests/sseq-core.test.js
+- **Evidence:** PASS avvisning og støttede kommandoer; NOT TESTED full SSEQ-korpus
+- **Remaining limitations:** Krever bredere opcode-implementasjon og uavhengige SSEQ-fixtures.
+
+### ST-056 — Loop-editor skriver ikke endringer inn i SSEQ-byte
+
+- **Severity:** P2
+- **Status:** OPEN
+- **Discovered:** 2026-11-15, SSEQ-only transkripsjonsrunde
+- **Reproduction:** Eksportdialogens sekunder- og loopinnstillinger er lokale metadata, ikke binære SSEQ-endringer.
+- **Impact:** En bruker kan tro at en valgt loop er endret mens opprinnelig loop brukes ved avspilling.
+- **Affected files:** `app.js, sigma_dex_export.js`
+- **Root cause:** Eksport bruker den originale, lagrede SSEQ-filen for integritet og konverterer ikke loopinnstillinger.
+- **Change:** Pakkemanifest bruker den faktisk parsede SSEQ-loop-statusen, ikke uverifiserte UI-verdier.
+- **Regression test:** tests/sseq-core.test.js
+- **Evidence:** PASS faktisk loopflagg i manifest; FAIL ønsket spesifikk loopsekund-redigering
+- **Remaining limitations:** Må implementere binær note-/event-edit og ny versjon ved loopendring.
+
+### ST-057 — Noen lydkodeker og lange spor ikke verifisert i nettleser
+
+- **Severity:** P2
+- **Status:** OPEN
+- **Discovered:** 2026-11-15, SSEQ-only transkripsjonsrunde
+- **Reproduction:** FLAC/M4A/Opus/AAC avhenger av decodeAudioData-støtte; varer over 360 s avvises, og ytelse på mobil er ukjent.
+- **Impact:** En del egenproduserte lange/komprimerte opptak kan ikke konverteres.
+- **Affected files:** `sseq_transcribe.js, sseq_transcribe_worker.js`
+- **Root cause:** Native nettleserkodeker og kostbar FFT med 360 sekunders tak.
+- **Change:** Egen Web Worker med abort/timeout og konkret feilmelding, men ikke universell dekoder.
+- **Regression test:** tests/browser_sseq_conversion.py
+- **Evidence:** PASS 2 sek WAV/MP3, NOT TESTED 360 sek/M4A/FLAC på enheter
+- **Remaining limitations:** Flere format-/belastningstester og kvalitetssikret fallback trengs.
+
+### ST-058 — Ny SSEQ-only SQL og ekte offentlig lagringsflyt mangler stagingverifikasjon
+
+- **Severity:** P1
+- **Status:** BLOCKED
+- **Discovered:** 2026-11-15, SSEQ-only transkripsjonsrunde
+- **Reproduction:** Nye RP C-er for slot og SSEQ-only reservasjoner/publisering er ikke kjørt mot virkelig Supabase og Turnstile.
+- **Impact:** Produksjonsopplasting eller låtavspilling kan feile etter deploy selv om lokale mocktester består.
+- **Affected files:** `supabase/migrations/20261115_sseq_only.sql, api/, scripts/validate-pending.mjs`
+- **Root cause:** Ingen tilgjengelig stagingdatabase/secret for ekte systemtest i arbeidsmiljøet.
+- **Change:** Sikker restriksjon i kode, privat bucket, serverparse og staged-godkjenningsflyt implementert.
+- **Regression test:** tests/security.test.js, tests/sseq-banks.test.js
+- **Evidence:** PASS isolerte enhetstester; BLOCKED reell Supabase/Turnstile/Vercel
+- **Remaining limitations:** Krever forhåndsvisningsdeploy, migrasjoner, live webhook og samtidige klienter.
+
+### ST-059 — Spotify-inspirert normalisering kalibrert for PCM og er deaktivert for SSEQ-synth
+
+- **Severity:** P2
+- **Status:** OPEN
+- **Discovered:** 2026-11-15, SSEQ-only transkripsjonsrunde
+- **Reproduction:** Tidligere avspillingsgain og loudnessmålinger gjelder innspillingsaudio; ny SSEQ-motor bruker egne oscillatorer.
+- **Impact:** Tidligere hadde sound-mode-bryteren ingen effekt på SSEQ; nå gir den relativt gain-nivå, men ikke dokumentert LUFS-normalisering.
+- **Affected files:** `app.js, sseq_player.js`
+- **Root cause:** enableAudio og applyGain returnerer tidlig for isSigmaSseq; ingen SSEQ loudnessanalyse.
+- **Change:** v1.4.1: OFF/QUIET/NORMAL/LOUD gir nå faktisk Web Audio-gain med kompressor og myke overganger; tydelig ikke-LUFS-merket UI. Eksakt Spotify-/EBU-normalisering er fremdeles ikke implementert.
+- **Regression test:** tests/browser_sseq_player.py
+- **Evidence:** PASS funksjonelle gains/mute/volum 0 i Chromium; NOT TESTED kalibrert LUFS mot lydmåler
+- **Remaining limitations:** Implementer offline syntesemåling og true-peak/BS.1770-kalibrering for reelle LUFS-løfter; modellen er ikke en autentisk HeartGold-sampler.
+
+### ST-060 — Forsinket SSEQ-lasting kunne starte lyd etter Pause
+
+- **Severity:** P1
+- **Status:** VERIFIED
+- **Discovered:** 2026-11-15, SSEQ-webavspillingsregresjon
+- **Reproduction:** Kall play() mens fetch holdes åpen, klikk Pause, løs deretter fetch; tidligere fortsatte play() med AudioContext og kunne starte etter brukeravbrudd.
+- **Impact:** Utilsiktet avspilling etter pause, kildeskifte eller navigasjon.
+- **Affected files:** `sseq_player.js`
+- **Root cause:** Asynkron play() sammenlignet ikke sin generasjon med siste brukerhandling etter await.
+- **Change:** Bruk _generation som invalideres av pause(), src-setter og dispose(). Kontroller både etter _ensure() og AudioContext.resume().
+- **Regression test:** `tests/browser_sseq_player.py`
+- **Evidence:** PASS faktisk Chromium-test for pause under fetch og gamle kilder; ny avspilling starter ikke, og riktig kilde kan fremdeles lastes.
+- **Remaining limitations:** Testene bruker isolerte nettleserfiler, ikke live Supabase eller Safari.
+
+### ST-061 — Store lydkilder kunne belaste nettleserminnet og blokkere hovedtråden
+
+- **Severity:** P2
+- **Status:** FIXED – NOT VERIFIED
+- **Discovered:** 2026-11-15, ressurssjekk for lokal transkripsjon
+- **Reproduction:** Kode kunne lese en ubegrenset fil til ArrayBuffer og lage en ekstra kopi før dekoding; ved Worker-feil kjørte FFT selv for lange lydfiler på hovedtråden.
+- **Impact:** Uforholdsmessig RAM-forbruk og treg/frossen UI på store opptak.
+- **Affected files:** `sseq_transcribe.js`
+- **Root cause:** Manglende pre-decode bytegrense, unødvendig buffer.slice(0), ubetinget hovedtråd-fallback.
+- **Change:** 128 MiB kildegrense, direkte decodeAudioData(buffer), 15 s tak på foreground-fallback, eksplisitt timeout/reject.
+- **Regression test:** `tests/browser_sseq_conversion.py`
+- **Evidence:** PASS kontrollert oversize-avvisning før kildebytes leses; NOT TESTED faktisk lang fil på fysisk mobil.
+- **Remaining limitations:** Må måle 1–6 minutters dekoding, Worker-kjøreytelse, mobil-RAM og opplastingsbruk.
+
 ## QC7 issue status — generated
 
 | Severity | OPEN | IN PROGRESS | FIXED – NOT VERIFIED | VERIFIED | BLOCKED | WONTFIX | Total |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | P0 | 0 | 0 | 0 | 2 | 2 | 0 | 4 |
-| P1 | 3 | 0 | 5 | 14 | 4 | 0 | 26 |
-| P2 | 6 | 0 | 0 | 10 | 2 | 0 | 18 |
+| P1 | 5 | 0 | 5 | 15 | 6 | 0 | 31 |
+| P2 | 11 | 0 | 1 | 10 | 2 | 0 | 24 |
 | P3 | 0 | 0 | 0 | 2 | 0 | 0 | 2 |
-| **Total** | 9 | 0 | 5 | 28 | 8 | 0 | **50** |
+| **Total** | 16 | 0 | 6 | 29 | 10 | 0 | **61** |
 
-- Registered: **50**
-- New since QC6: **17** (ST-034 onwards)
-- New in independent QC7 recheck: **9** (ST-042 onwards)
+- Registered: **61**
+- New since QC6: **28** (ST-034 onwards)
+- New in independent QC7 recheck: **20** (ST-042 onwards)
 - Historical ST-001–ST-033: preserved
 - Regressions detected in currently passing local tests: **0**; this does not certify untested infrastructure
 
-<!-- COUNTS {"OPEN":{"P0":0,"P1":3,"P2":6,"P3":0},"IN PROGRESS":{"P0":0,"P1":0,"P2":0,"P3":0},"FIXED – NOT VERIFIED":{"P0":0,"P1":5,"P2":0,"P3":0},"VERIFIED":{"P0":2,"P1":14,"P2":10,"P3":2},"BLOCKED":{"P0":2,"P1":4,"P2":2,"P3":0},"WONTFIX":{"P0":0,"P1":0,"P2":0,"P3":0}} -->
+<!-- COUNTS {"OPEN":{"P0":0,"P1":5,"P2":11,"P3":0},"IN PROGRESS":{"P0":0,"P1":0,"P2":0,"P3":0},"FIXED – NOT VERIFIED":{"P0":0,"P1":5,"P2":1,"P3":0},"VERIFIED":{"P0":2,"P1":15,"P2":10,"P3":2},"BLOCKED":{"P0":2,"P1":6,"P2":2,"P3":0},"WONTFIX":{"P0":0,"P1":0,"P2":0,"P3":0}} -->

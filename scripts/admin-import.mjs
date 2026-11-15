@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /** Owner-only batch import. Never bundle server keys in the frontend or run in a public API.
  * Run: SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/admin-import.mjs ./my-music
- * Optional: --dry-run, --csv=metadata.csv (columns filename,title,artist,album), --retry=3.
+ * Optional: --dry-run, --csv=metadata.csv (columns filename,title,artist,album,slot); SSEQ only, --retry=3.
  */
 import {createHash,randomUUID,randomBytes} from 'node:crypto';
 import {createReadStream,promises as fs} from 'node:fs';
 import {resolve,extname,basename,join} from 'node:path';
 import {BUCKET,extensionMime,allowedExtensions,sniff,MAX_UPLOAD_BYTES,sanitizeTitle} from '../lib/common.js';
 import {parseMetadataCSV} from '../lib/csv.js';
-import {validateAudioFile} from '../lib/media-validation.js';
+import {parseSseq,getProfile} from '../lib/sseq-server.js';
 import {adminUploadOutcome} from '../lib/admin-recovery.js';
 
 const snooze=ms=>new Promise(r=>setTimeout(r,ms));
@@ -35,7 +35,7 @@ async function metadata(csvPath){return csvPath?parseMetadataCSV(await fs.readFi
 async function checksum(path){const h=createHash('sha256');for await(const part of createReadStream(path))h.update(part);return h.digest('hex')}
 async function storageDelete(path){try{await request(`/storage/v1/object/${BUCKET}/${path}`,{method:'DELETE'})}catch(e){console.error('WARNING: orphan may require manual removal:',path,e.message)}}
 async function importOne(path,record){const stat=await fs.stat(path),filename=basename(path),ext=extname(path).slice(1).toLowerCase();
- if(!allowedExtensions.has(ext)||stat.size<64||stat.size>MAX_UPLOAD_BYTES)throw Error(`Format/size not allowed: ${filename} (${stat.size} bytes)`);
+ if(!allowedExtensions.has(ext)||stat.size<30||stat.size>MAX_UPLOAD_BYTES)throw Error(`Format/size not allowed: ${filename} (${stat.size} bytes)`);
  const handle=await fs.open(path,'r');let first=Buffer.alloc(64);try{await handle.read(first,0,64,0)}finally{await handle.close()}
  if(!sniff(first,ext))throw Error('Audio signature rejected: '+filename);
  const hash=await checksum(path);
@@ -45,8 +45,9 @@ async function importOne(path,record){const stat=await fs.stat(path),filename=ba
  const title=sanitizeTitle(record.title||(split.length>1?split.slice(1).join(' - '):stem));
  const artist=sanitizeTitle(record.artist||(split.length>1?split[0]:'Unknown artist'));
  const album=sanitizeTitle(record.album||'');
- const checked=await validateAudioFile(path,{extension:ext,expectedHash:hash,expectedBytes:stat.size});
- if(dry)return {status:'dry-run',filename,size:stat.size,title,artist,sha256:hash,codec:checked.codec};
+ const slot=Number(record.slot??process.env.HEARTGOLD_DEFAULT_SLOT??1028);getProfile(slot);
+ const checked=parseSseq(await fs.readFile(path),slot);
+ if(dry)return {status:'dry-run',filename,size:stat.size,title,artist,sha256:hash,codec:'SSEQ',slot};
  const secretHash=randomBytes(32).toString('hex');
  const reserve=await request('/rest/v1/rpc/reserve_admin_theme_upload',{
    method:'POST',headers:{'Content-Type':'application/json'},
@@ -57,6 +58,8 @@ async function importOne(path,record){const stat=await fs.stat(path),filename=ba
   const uploaded=await fetch(url+`/storage/v1/object/${BUCKET}/${objectPath}`,{
    method:'POST',headers:{...headers,'Content-Type':extensionMime[ext],'x-upsert':'false'},body,duplex:'half',signal:AbortSignal.timeout(180000)});
   if(!uploaded.ok)throw Error('Storage upload failed '+uploaded.status+': '+(await uploaded.text()).slice(0,150));
+  const assign=await request('/rest/v1/rpc/assign_theme_slot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_id:id,p_secret_hash:secretHash,p_slot:slot})});
+  if(!(await assign.json()))throw Error('Could not assign HeartGold target');
   const queued=await request('/rest/v1/rpc/queue_theme_upload',{method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({p_id:id,p_secret_hash:secretHash,p_title:title,p_artist:artist,p_album:album})});
   if(!(await queued.json()))throw Error('Queued validation was not confirmed');

@@ -1,3 +1,52 @@
+# QC continuation — v1.4.2 SSEQ preview (2026-11-15)
+
+- **Automatic instrument compatibility fix:** `sseq_transcribe.js` no longer unconditionally assigns an out-of-range selected program to voice 1. It falls back to a playable program in the *same genuine HeartGold bank* and retains all note events. The user sees the substitution; songs with no compatible program still fail closed.
+- Added `tests/sseq-auto-bank.test.js` for a real Route 29 SBNK range conflict (program 39 vs pitches 20/24), including a no-unnecessary-fallback negative control.
+- Restored a tested downloadable ZIP from the latest Library snapshot. Added GitHub browser-only deployment instructions, because the existing web repository still needs a separate commit and Supabase/Turnstile staging validation.
+- Remaining blockers are unchanged: dense multi-instrument mix transcription is approximate; no live authenticated Supabase, Origin HeartGold playback or Sigma Dex importer run was available.
+
+---
+
+# QC continuation — v1.4.1 SSEQ preview (2026-11-15)
+
+- **ST-060** (`sseq_player.js`): add a monotonically increasing playback generation. Pause, source replacement, and dispose invalidate delayed `fetch()` / `AudioContext.resume()` results. Play cannot begin after a cancellation. Web Audio nodes/timers are cleaned up as before. Regression: `tests/browser_sseq_player.py` PASS in Chromium using delayed fetch responses.
+- **ST-059** (`sseq_player.js`, `app.js`, `index.html`): the existing sound-mode controls now affect the SSEQ synth's real Web Audio gain, and a DynamicsCompressorNode limits combined oscillator peaks. The UI explicitly says this is NOT measured Spotify/EBU LUFS normalization. Regression: gain-value, zero-volume, mute and play/pause checks PASS. Leave accurate loudness normalization OPEN.
+- **ST-051** (`sseq_transcribe.js`): conservatively detect up to four candidate spectral voices rather than forcing a single dominant melody. The synthetic melody+triad fixture contains the intended C3/E3/G3 and all four main notes, but also spurious notes. This is partial improvement, NOT validated polyphonic transcription; issue stays OPEN.
+- **ST-061** (`sseq_transcribe.js`): reject recordings over 128 MiB before decoding, avoid a duplicate ArrayBuffer allocation, and refuse long foreground FFT work when Web Workers are unavailable. Browser regression PASS for the pre-decode size check; large-device performance remains NOT TESTED.
+- **Tests and delivery:** extend `browser_sseq_conversion.py` for the mixed-track test; add `browser_sseq_player.py` to the browser runner and GitHub Actions; expand `independent_sseq_reader.py` to verify multitrack pointers and events independently of JS. No changes to Sigma Dex, ROM, hg-engine or stored instrument samples.
+
+---
+
+# Release history
+
+## v1.4.0-sseq-preview — 2026-11-15
+
+- **ST-051 / ST-053:** Added WAV/MP3 (without MIDI), MIDI and SSEQ input paths to existing upload button. WAV/MP3 uses a browser FFT Worker, **not** a pretrained multi-instrument transcription network; synthetic melody success is local, full mixed music still not solved.
+- **ST-060:** Fixed Nitro mono/poly command encoding from `0xC7 01` to `0xC7 00` and corrected parser timing. Added multi-track/note-range regression tests.
+- **ST-061:** Generated metadata-only instrument slot/program/pitch ranges from the private 39 SBNK/39 SWAR bundle; no original sample bytes in public repo.
+- **ST-063:** Fixed verified SSEQ library backup filenames to always end in `.sseq` and validated SSEQ payload before ZIP packaging.
+- **ST-066:** Updated the anonymous `theme_tracks` RLS SELECT policy to expose only valid SSEQ metadata, not legacy WAV/MP3 rows. This requires **staging deployment** before VERIFIED.
+- Converted public upload API, private bucket limit, queued validator and Web Audio library player to **SSEQ-only**; a saved sequence is replayed directly, not a hidden MP3 preview.
+- Changed Sigma Dex export to v2 `sigma-themes/sigma-dex-sseq-pack` with `.sseq` entries, folder hierarchy, SHA-256 checksums, target bank/slot metadata, and independent ZIP validator.
+- Updated GitHub/Vercel docs, sample SSEQ pack, active QA results and permanent issue journal; old v1.3 WAV docs archived.
+- **Still open:** polyphonic mastered-mix transcription, full Nitro command compatibility, actual HG ROM sound bank/game validation, exact loop editor rewrite, legacy catalog migration and live Supabase/Vercel tests.
+
+---
+
+# 2026-11-15 — v1.4.0 SSEQ-only experimental release
+
+- **`scripts/build_bank_profiles.py`, `heartgold_bank_profiles.json/js`:** Derived verified structural bank/program/pitch-range and slot metadata from the user's private HeartGold US bundle. Original 39 SBNK/39 SWAR binary contents remain private; 362 target music slots mapped. Correct sample/timbre rendering in game remains unverified.
+- **`sseq_codec.js`, `lib/sseq-server.js`:** Added Nitro SSEQ v1.0 writer, strict supported-opcode reader, bank/slot/instrument/pitch checks and byte budgets. No WAV/MP3 disguised as SSEQ.
+- **`sseq_transcribe.js`, `sseq_transcribe_worker.js`:** Added source audio decoding and experimental FFT note extraction, worker offloading, MIDI reading and SSEQ passthrough; limitation to simple motifs and missing chords documented (ST-051). The browser uses no separate uploaded MIDI to process WAV/MP3.
+- **`sseq_player.js`, `app.js`, `index.html`:** Switched audio playback to verified binary SSEQ note synthesis, slot/program selectors, source-format auto-conversion on upload, SSEQ-only downloads, no HeartGold/WAV export button, Sigma Dex SSEQ-only ZIP export. SSEQ is the only published music format; web timbres are approximate, not genuine SWAR samples.
+- **`lib/common.js`, `api/*.js`, `scripts/validate-pending.mjs`, `scripts/admin-import.mjs`:** Restrict new uploads, worker validation and admin submissions to `.sseq`; preserve auth-free Turnstile and private Supabase Storage; reject RAW source files at server boundary; legacy source tracks hidden pending a safe migration.
+- **`supabase/migrations/20261115_sseq_only.sql`:** New DB/RPC/storage constraints, validated target slot and private pending-publication flow. Migration is not yet staging verified.
+- **`sigma_dex_export.js`, `scripts/create-sigma-dex-example.mjs`, `scripts/validate-sigma-dex-pack.mjs`, `SIGMA_DEX_EXPORT_SPEC.md`:** Versioned v2 SSEQ-only import contract, deterministic filenames, bank/event mapping, hash/ZIP checks and a synthetic three-track example; no Nintendo assets.
+- **`tests/sseq-core.test.js`, `tests/sseq-banks.test.js`, `tests/browser_sseq_conversion.py`:** Added genuine Chromium WAV/MP3/MIDI/SSEQ tests, SSEQ Web Audio playback check, corruption and re-export checks; SSEQ export/slot tests. Legacy browser WAV-export suites removed from active runner, but historical files preserved.
+- **`README.md`, `TEST_RESULTS.md`, `QC_REPORT.md`, `HEARTGOLD_INTEGRATION.md`, `KNOWN_ISSUES.md`:** Updated documentation and open-blocker ledger; SSEQ-preview is not declared production-ready.
+
+---
+
 ## v1.3.0 — Sigma Dex music export and background assets (2026-11-15)
 
 - Added `sigma_dex_export.js`, a versioned, deterministic, validated single-ZIP Sigma Dex export format with folder selection, manifest and per-file SHA-256 checksums (ST-045).

@@ -57,7 +57,7 @@ test('ST-034 validation pipeline does not directly publish in upload-finish',()=
  assert.match(source,/rpc\('queue_theme_upload'/);
  assert.doesNotMatch(source,/rpc\('publish_theme_upload'/);
  const worker=readFileSync(new URL('../scripts/validate-pending.mjs',import.meta.url),'utf8');
- assert.match(worker,/validateAudioFile/);
+ assert.match(worker,/parseSseq/);
  assert.match(worker,/rpc\('publish_theme_upload'/);
 });
 test('ST-035 quota migration serializes all public reservations and counts real object bytes',()=>{

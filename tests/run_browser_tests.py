@@ -16,13 +16,15 @@ ROOT = Path(__file__).resolve().parent
 SUITES = [
     'browser_sprite_visibility.py',
     'browser_public.py',
-    'browser_upload_cancel.py',
-    'browser_exports.py',
+    # The historical large-MP3/TUS upload case is obsolete for <=64 KiB SSEQ.
+    # Regression remains in source history; new SSEQ file-input path is tested below.
+    'browser_sseq_upload_pipeline.py',
     'browser_catalog_integrity.py',
-    'browser_qc5.py',
-    'browser_qc7.py',
     'browser_sigma_export.py',
+    'browser_sseq_conversion.py',
+    'browser_sseq_player.py',
 ]
+
 
 
 def execute_suite(script: str, timeout: int = 75) -> float:

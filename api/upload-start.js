@@ -3,7 +3,7 @@ import {jsonBody,env,sb,rpc,err,safeError,requireMethod,clientIp,hmac,newReceipt
 export default async function handler(req,res){
  try{requireMethod(req,'POST');const b=jsonBody(req);env();
   const size=Number(b.size),sha=String(b.sha256||'').toLowerCase(),original=String(b.name||''),extension=original.split('.').pop().toLowerCase();
-  if(!Number.isSafeInteger(size)||size<64||size>MAX_UPLOAD_BYTES)throw err(413,'Audio file must be 64 bytes–45 MiB');
+  if(!Number.isSafeInteger(size)||size<30||size>MAX_UPLOAD_BYTES)throw err(413,'SSEQ file must be 30 bytes–64 KiB');
   if(!/^[a-f0-9]{64}$/.test(sha)||!allowedExtensions.has(extension)||original.length>240||!sanitizeTitle(original))throw err(400,'Invalid file name, type or SHA-256');
   await verifyTurnstile(b.turnstileToken,req);
   const receipt=newReceipt(),uploadId=randomUUID(),storagePath='uploads/'+uploadId+'.'+extension;

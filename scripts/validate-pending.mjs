@@ -10,7 +10,8 @@ import {pipeline} from 'node:stream/promises';
 import {Readable} from 'node:stream';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {validateAudioFile} from '../lib/media-validation.js';
+import {parseSseq} from '../lib/sseq-server.js';
+import {readFile} from 'node:fs/promises';
 import {boundedBytes} from '../lib/stream-limit.js';
 import {BUCKET,MAX_UPLOAD_BYTES,extensionMime} from '../lib/common.js';
 const url=String(process.env.SUPABASE_URL||'').replace(/\/$/,'');
@@ -38,23 +39,25 @@ async function processOne(row){
   if(!r.ok||!r.body)throw Error('Uploaded Storage object missing');
   if(Number(r.headers.get('content-length'))>MAX_UPLOAD_BYTES)throw Error('Audio object exceeds allowed size');
   await pipeline(Readable.fromWeb(r.body),boundedBytes(MAX_UPLOAD_BYTES),createWriteStream(filename));
-  const info=await validateAudioFile(filename,{extension:row.extension,expectedBytes:Number(row.size_bytes),expectedHash:row.sha256});
+  if(row.extension!=='sseq')throw Error('Legacy audio requires migration; cannot publish raw recordings');
+  const data=await readFile(filename);const info=parseSseq(data,Number(row.validation_slot));
+  const duration=info.durationTicks*60/(48*info.tempo);
   const current=await request(`/rest/v1/theme_uploads?id=eq.${row.id}&select=status,validation_claim_id&limit=1`);
   if(current?.[0]?.status!=='processing'||current?.[0]?.validation_claim_id!==row.validation_claim_id)
     throw Error('Upload validation claim changed or was canceled');
   const published=await rpc('publish_theme_upload',{
    p_id:row.id,p_secret_hash:row.secret_hash,p_title:row.validation_title,
    p_artist:row.validation_artist,p_album:row.validation_album||'',
-   p_duration:info.duration,p_mime:extensionMime[row.extension],p_lufs:null,p_peak:null,p_claim_id:row.validation_claim_id
+   p_duration:duration,p_mime:'application/octet-stream',p_lufs:null,p_peak:null,p_claim_id:row.validation_claim_id
   });
   if(!published?.id)throw Error('Database did not confirm published song');
-  console.log('VALIDATED/PUBLISHED',row.id,info.codec,info.sampleRate,info.channels,info.duration);
+  console.log('VALIDATED/PUBLISHED SSEQ',row.id,'notes',info.notes.length,'slot',row.validation_slot,'bytes',data.length);
   return true;
  }catch(e){
   // Only reject still-processing rows. A canceled reservation cannot be re-published.
   console.error('REJECTED',row.id,String(e.message).slice(0,200));
   try{
-   const rejected=await rpc('reject_theme_validation',{p_id:row.id,p_reason:'Audio validation failed',p_claim_id:row.validation_claim_id});
+   const rejected=await rpc('reject_theme_validation',{p_id:row.id,p_reason:'SSEQ format or instrument validation failed',p_claim_id:row.validation_claim_id});
    if(rejected)await removeObject(row);
   }catch(cleanupError){console.error('CLEANUP PENDING',row.id,cleanupError.message)}
   return false;

@@ -16,10 +16,10 @@ window.Worker=undefined;
 window.Audio=class FakeAudio{constructor(){this.duration=1;this.onloadedmetadata=null;this.onerror=null}set src(x){queueMicrotask(()=>this.onloadedmetadata?.())}};
 window.__calls={start:0,finish:0,cancel:0,abort:0,request:[],methods:[]};
 window.turnstile={render(_e,options){queueMicrotask(()=>options.callback('t'.repeat(32)));return 'w1'},remove(){},reset(){}};
-const receipt={uploadId:'e7ebec2c-f475-499e-8447-0c46d9ab1c67',receipt:'f'.repeat(64),signedUrl:'https://test.local/upload',tusEndpoint:'https://test.local/tus',token:'TOKEN',storagePath:'uploads/test.mp3',bucket:'sigma-theme-audio',extension:'mp3'};
+const receipt={uploadId:'e7ebec2c-f475-499e-8447-0c46d9ab1c67',receipt:'f'.repeat(64),signedUrl:'https://test.local/upload',tusEndpoint:'https://test.local/tus',token:'TOKEN',storagePath:'uploads/test.sseq',bucket:'sigma-theme-audio',extension:'sseq'};
 window.fetch=async(url,options)=>{
  url=String(url);
- if(url.includes('/api/config'))return Response.json({ready:true,maxUploadBytes:47185920,turnstileSiteKey:'SITE'});
+ if(url.includes('/api/config'))return Response.json({ready:true,maxUploadBytes:65536,turnstileSiteKey:'SITE'});
  if(url.includes('/api/catalog'))return Response.json({tracks:[]});
  if(url.includes('/api/upload-start')){__calls.start++;return Response.json(receipt)}
  if(url.includes('/api/upload-finish')){__calls.finish++;return Response.json({track:{id:'published'}},{status:201})}
@@ -43,14 +43,14 @@ async def main():
     results={}
     async with async_playwright() as w:
         b=await w.chromium.launch(headless=True,executable_path='/usr/bin/chromium' if os.path.exists('/usr/bin/chromium') else None,args=['--no-sandbox'])
-        for mode,size in [('PUT',1024),('TUS',7*1024*1024)]:
+        for mode,size in [('PUT',1024)]:
             p=await b.new_page()
             await p.evaluate('() => {' + INIT + '}')
             errs=[]
             p.on('pageerror', lambda e:errs.append(str(e)))
             await p.set_content(fixture(),wait_until='domcontentloaded')
             await p.wait_for_function('window.SigmaDebug?.state.ready===true')
-            await p.evaluate('''size=>{const data=new Uint8Array(size);data[0]=73;data[1]=68;data[2]=51;const file=new File([data],'test-song.mp3',{type:'audio/mpeg'});void SigmaDebug.uploadFiles([file])}''',size)
+            await p.evaluate('''size=>{const data=SigmaSSEQ.build({slot:1028,profiles:SigmaBankProfiles,tracks:[{program:0,notes:[{start:0,duration:48,pitch:60,velocity:96},{start:48,duration:48,pitch:62,velocity:96}]}]});const file=new File([data],'test-song.sseq',{type:'application/octet-stream'});void SigmaDebug.uploadFiles([file])}''',size)
             expected='PUT' if mode=='PUT' else 'PATCH'
             await p.wait_for_function('(m)=>window.__calls.methods.includes(m)',arg=expected,timeout=30000)
             await p.locator('#cancelUpload').click()

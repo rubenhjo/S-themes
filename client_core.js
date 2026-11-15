@@ -170,5 +170,12 @@
       }catch(e){finish(e)}
     });
   }
-  root.SigmaCore={CancelledError,TimeoutError,aborted,operation,classify,delay,retryTransient,sessionSnapshot,validResume,nextPlayableIndex,chooseTracks,assertDistinctMappings,partition,normalizePersonalState,validateTusURL,tusSessionKey,reorderVisibleSlots,partitionDS,dsPartManifest,turnstileToken};
+
+  /** Backups contain approved SSEQ bytes, independent of source recording filename.
+      Escape the stable track identifier so it cannot introduce directory separators. */
+  function sseqBackupPath(trackId){
+    if(typeof trackId!=='string'||!trackId||trackId.length>160)throw Error('Invalid backup track ID');
+    return 'audio/'+encodeURIComponent(trackId)+'.sseq';
+  }
+  root.SigmaCore={CancelledError,TimeoutError,aborted,operation,classify,delay,retryTransient,sessionSnapshot,validResume,nextPlayableIndex,chooseTracks,assertDistinctMappings,partition,normalizePersonalState,validateTusURL,tusSessionKey,reorderVisibleSlots,partitionDS,dsPartManifest,turnstileToken,sseqBackupPath};
 })(globalThis);

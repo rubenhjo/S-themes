@@ -11,6 +11,8 @@ def fixture():
     html=re.sub(r'<link[^>]+fonts.gstatic[^>]*>', '', html)
     html=html.replace('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>','')
     html=html.replace('<script src="ds_audio.js"></script>', '<script>'+(ROOT/'ds_audio.js').read_text()+'</script>')
+    for required in ['heartgold_bank_profiles.js','sseq_codec.js','sseq_transcribe.js','sseq_player.js']:
+        html=html.replace('<script src="'+required+'"></script>', '<script>'+(ROOT/required).read_text()+'</script>')
     html=html.replace('<script src="metadata.js"></script>', '<script>'+(ROOT/'metadata.js').read_text()+'</script>')
     html=html.replace('<script src="client_core.js"></script>', '<script>'+(ROOT/'client_core.js').read_text()+'</script>')
     html=html.replace('<script src="app.js" defer></script>', '<script>'+(ROOT/'app.js').read_text()+'</script>')
@@ -36,7 +38,7 @@ async def main():
       await page.add_init_script('''
        const originalFetch=window.fetch;
        window.fetch=async (url,options)=>{
-         if(String(url).includes('/api/config')) return new Response(JSON.stringify({ready:false,maxUploadBytes:47185920}),{status:200,headers:{'Content-Type':'application/json'}});
+         if(String(url).includes('/api/config')) return new Response(JSON.stringify({ready:false,maxUploadBytes:65536}),{status:200,headers:{'Content-Type':'application/json'}});
          if(String(url).includes('/api/catalog')) return new Response(JSON.stringify({tracks:[]}),{status:200,headers:{'Content-Type':'application/json'}});
          return originalFetch(url,options);
        }

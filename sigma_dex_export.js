@@ -2,7 +2,7 @@
    Only sigma-themes is modified. No assumptions about the future Sigma-dex receiver. */
 ((root) => {
   'use strict';
-  const FORMAT='sigma-themes/sigma-dex-music-pack',VERSION=1,RATE=32728;
+  const FORMAT='sigma-themes/sigma-dex-sseq-pack',VERSION=2,RATE=0;
   const MAX_FOLDER_DEPTH=12,MAX_TRACKS=1500;
   const validId=s=>typeof s==='string'&&s.length>=1&&s.length<=160&&!/[\u0000-\u001f]/.test(s);
   const safeName=(s)=>{
@@ -83,7 +83,7 @@
       if(event!==null&&musicIds.has(event))throw Error('Duplicate music/event ID');
       if(event!==null)musicIds.add(event);
       const folder=index.get(folder_id);
-      const basename=safeName(title).replace(/\s/g,'_')+'-'+safeTrackId(t.id)+'.wav';
+      const basename=safeName(title).replace(/\s/g,'_')+'-'+safeTrackId(t.id)+'.sseq';
       const file='music/'+(folder.path?folder.path+'/':'')+basename;
       if(fileNames.has(file))throw Error('Export filename collision');fileNames.add(file);
       result.push({id:t.id,title,artist,original_filename:t.original_filename||'unknown',folder_id,folder_path:folder.path,file,duration_s:duration,loop_enabled:loop,loop_start_sec:start,loop_end_sec:end,event_id:event,source_sha256:t.sha256||null,source_bytes:Number(t.size_bytes)||null,source:t});
@@ -117,62 +117,76 @@
   const jsonBlob=obj=>new Blob([JSON.stringify(obj,null,2)+'\n'],{type:'application/json'});
   function assertPath(path){if(typeof path!=='string'||!path||path.startsWith('/')||path.includes('\\')||path.split('/').some(s=>s==='..'||s==='.'||!s))throw Error('Invalid ZIP path');}
   async function packageFiles(plan,encoded,{id='export-'+Date.now(),createdAt=new Date().toISOString(),onProgress,signal}={}){
-    if(!root.SigmaDS)throw Error('SigmaDS audio tools unavailable');
+    if(!root.SigmaDS||!root.SigmaSSEQ||!root.SigmaBankProfiles)throw Error('SSEQ or ZIP tools unavailable');
     const check=()=>{if(signal?.aborted)throw Error('Export canceled')};check();
-    const files=[],records=[],wavs=new Map();
-    if(plan.tracks.length!==encoded.size)throw Error('Export is missing audio files');
+    const files=[],records=[];
+    if(plan.tracks.length!==encoded.size)throw Error('Export missing music files');
+    const ids=new Set();
     for(const [i,t] of plan.tracks.entries()){
-      check();const blob=encoded.get(t.id);if(!blob||!blob.size)throw Error('Missing encoded track '+t.id);
-      assertPath(t.file);const info=await wavInfo(blob);if(!t.loop_enabled&&info.smpl)throw Error('Unexpected WAV loop');
-      if(t.loop_enabled&&!info.smpl)throw Error('Missing WAV loop');
-      if(info.smpl&&t.export_loop_samples&&(info.smpl.start!==t.export_loop_samples.start||info.smpl.end!==t.export_loop_samples.end))throw Error('WAV loop mismatch');
-      const out={id:t.id,title:t.title,artist:t.artist,original_filename:t.original_filename,exported_filename:t.file.split('/').at(-1),file:t.file,folder_id:t.folder_id,folder_path:t.folder_path,source_sha256:t.source_sha256,format:'WAV IMA-ADPCM',samplerate:info.rate,channels:info.channels,duration_s:info.frames/info.rate,loop_enabled:t.loop_enabled,loop_start_sample:info.smpl?.start??null,loop_end_sample:info.smpl?.end??null,loop_start_sec:info.smpl?info.smpl.start/RATE:null,loop_end_sec:info.smpl?(info.smpl.end+1)/RATE:null,event_id:t.event_id,bytes:blob.size,sha256:await sha256(blob)};
-      records.push(out);wavs.set(t.file,blob);files.push({name:t.file,blob});onProgress?.(i+1,plan.tracks.length);
+      check();const blob=encoded.get(t.id);if(!blob||!blob.size)throw Error('Missing SSEQ: '+t.id);
+      assertPath(t.file);if(!t.file.endsWith('.sseq'))throw Error('Only .sseq music files are allowed');
+      const slot=Number(t.source.sseq_id);if(!Number.isInteger(slot))throw Error('Missing HeartGold bank slot for '+t.title);
+      const data=new Uint8Array(await blob.arrayBuffer()),parsed=root.SigmaSSEQ.parse(data,{profiles:root.SigmaBankProfiles,slot,maxBytes:65536});
+      const digest=await sha256(blob);
+      if(t.source_sha256&&digest!==t.source_sha256)throw Error('Stored SSEQ hash differs: '+t.title);
+      if(ids.has(t.id))throw Error('Duplicate track ID');ids.add(t.id);
+      const bank=root.SigmaSSEQ.profileSlot(root.SigmaBankProfiles,slot);
+      const out={id:t.id,title:t.title,artist:t.artist,original_filename:t.original_filename,
+        exported_filename:t.file.split('/').at(-1),file:t.file,folder_id:t.folder_id,
+        folder_path:t.folder_path,source_sha256:t.source_sha256,format:'SSEQ',codec:'Nitro sequence',
+        bank_id:bank.bankId,source_slot:slot,source_symbol:bank.symbol,
+        wave_archives:bank.bank.wave_archive_slots.filter(x=>x!==null),
+        duration_s:parsed.durationTicks*60/(parsed.tempo*48),tempo:parsed.tempo,
+        notes:parsed.notes.length,loop_enabled:parsed.infinite,event_id:t.event_id,
+        bytes:blob.size,sha256:digest};
+      records.push(out);files.push({name:t.file,blob});onProgress?.(i+1,plan.tracks.length);
     }
     const folders=plan.folders.map(f=>({...f}));
-    const trackJson=jsonBlob(records),folderJson=jsonBlob(folders);
-    const manifest={format:FORMAT,version:VERSION,export_id:id,created_at:createdAt,producer:'sigma-themes',sample_rate:RATE,codec:'RIFF WAVE IMA-ADPCM',channels:2,folder_count:folders.length-1,track_count:records.length,tracks:records,folders_file:'folders.json',tracks_file:'tracks.json',checksums_file:'checksums.sha256',note:'Assets for a future Sigma Dex music importer; no ROM patch included.'};
-    const manifestBlob=jsonBlob(manifest);
-    files.push({name:'folders.json',blob:folderJson},{name:'tracks.json',blob:trackJson},{name:'manifest.json',blob:manifestBlob});
-    const checksums=[];for(const f of files){check();checksums.push((await sha256(f.blob))+'  '+f.name)}
-    files.push({name:'checksums.sha256',blob:new Blob([checksums.join('\n')+'\n'],{type:'text/plain'})});
-    files.push({name:'README.txt',blob:new Blob(['Sigma Dex music export v1\nGenerated by sigma-themes. Import this entire ZIP into a compatible future Sigma Dex importer.\nNo ROM files, game hooks, or manual audio conversion are included.\n'])});
-    // A single ZIP32 is supported; fail explicitly rather than silently delivering multiple incomplete parts.
-    const bytes=files.reduce((n,f)=>n+f.blob.size+256+f.name.length,0);
-    if(bytes>0xffffffff-65536*300)throw Error('One ZIP would exceed ZIP32 limits. Export a smaller selection.');
-    const zip=await root.SigmaDS.zip(files);check();
-    await verifyPackage(zip,{signal});check();
+    const manifest={format:FORMAT,version:VERSION,export_id:id,created_at:createdAt,
+      producer:'sigma-themes',game:'Pokemon HeartGold US',bank_profile_sha256:root.SigmaBankProfiles.source_sdat_sha256,
+      folder_count:folders.length-1,track_count:records.length,
+      tracks:records,folders_file:'folders.json',tracks_file:'tracks.json',checksums_file:'checksums.sha256',
+      note:'Contains only validated SSEQ music, metadata and checksums. No ROM, SBNK, SWAR, or streaming audio.'};
+    files.push({name:'folders.json',blob:jsonBlob(folders)},
+               {name:'tracks.json',blob:jsonBlob(records)},
+               {name:'manifest.json',blob:jsonBlob(manifest)});
+    const lines=[];for(const f of files){check();lines.push((await sha256(f.blob))+'  '+f.name)}
+    files.push({name:'checksums.sha256',blob:new Blob([lines.join('\n')+'\n'],{type:'text/plain'})});
+    files.push({name:'README.txt',blob:new Blob(['Sigma Dex SSEQ pack v2. Import into a receiver that implements the versioned contract.\nNo original Nintendo files or HeartGold ROM are distributed.\n'])});
+    const cost=files.reduce((n,f)=>n+f.blob.size+256+f.name.length,0);
+    if(cost>0xffffffff-65536*300)throw Error('ZIP32 size limit; reduce the selected songs.');
+    const zip=await root.SigmaDS.zip(files);check();await verifyPackage(zip,{signal});check();
     return {blob:zip,manifest,folders,tracks:records};
   }
   async function verifyPackage(zip,{signal}={}){
-    if(!root.SigmaDS)throw Error('SigmaDS unavailable');
+    if(!root.SigmaDS||!root.SigmaSSEQ||!root.SigmaBankProfiles)throw Error('Validator unavailable');
     const check=()=>{if(signal?.aborted)throw Error('Validation canceled')};check();
     await root.SigmaDS.verifyZip(zip,{signal});const entries=await root.SigmaDS.unzip(zip);check();
-    const read=async n=>{const blob=entries.get(n);if(!blob)throw Error('Missing '+n);return blob.text()};
-    const manifest=JSON.parse(await read('manifest.json'));
-    const folders=JSON.parse(await read('folders.json'));
-    const tracks=JSON.parse(await read('tracks.json'));
-    if(manifest.format!==FORMAT||manifest.version!==VERSION||!Array.isArray(folders)||!Array.isArray(tracks))throw Error('Invalid Sigma Dex manifest');
-    if(manifest.track_count!==tracks.length||manifest.folder_count!==folders.length-1||JSON.stringify(manifest.tracks)!==JSON.stringify(tracks))throw Error('Manifest does not match package');
-    const map=folderIndex(folders.filter(f=>f.id!=='root'));
-    const seenIds=new Set(),paths=new Set(),musicIds=new Set();
-    for(const t of tracks){
-      check();if(!validId(t.id)||seenIds.has(t.id)||!map.has(t.folder_id))throw Error('Duplicate track ID or unknown folder');seenIds.add(t.id);
-      assertPath(t.file);if(paths.has(t.file)||!t.file.startsWith('music/'))throw Error('Invalid or duplicate file path');paths.add(t.file);
-      const folder=map.get(t.folder_id);if(t.folder_path!==folder.path||!t.file.startsWith('music/'+(folder.path?folder.path+'/':'')))throw Error('Track folder/path mismatch');
-      if(t.event_id!==null){if(!Number.isInteger(t.event_id)||t.event_id<0||t.event_id>65535||musicIds.has(t.event_id))throw Error('Duplicate or invalid music/event ID');musicIds.add(t.event_id)}
-      const blob=entries.get(t.file);if(!blob||blob.size!==t.bytes||await sha256(blob)!==t.sha256)throw Error('Missing/corrupt audio: '+t.file);
-      const info=await wavInfo(blob);
-      if(info.rate!==t.samplerate||info.channels!==t.channels||t.loop_enabled!==!!info.smpl||t.loop_start_sample!==(info.smpl?.start??null)||t.loop_end_sample!==(info.smpl?.end??null))throw Error('Audio metadata mismatch: '+t.file);
+    const read=async n=>{const b=entries.get(n);if(!b)throw Error('Missing '+n);return b.text()};
+    const manifest=JSON.parse(await read('manifest.json')),
+          tracks=JSON.parse(await read('tracks.json')),
+          folders=JSON.parse(await read('folders.json'));
+    if(manifest.format!==FORMAT||manifest.version!==VERSION||!Array.isArray(tracks)||!Array.isArray(folders)||
+       manifest.track_count!==tracks.length||manifest.folder_count!==folders.length-1||
+       JSON.stringify(manifest.tracks)!==JSON.stringify(tracks))throw Error('Invalid SSEQ pack manifest');
+    const index=folderIndex(folders.filter(f=>f.id!=='root')),trackIds=new Set(),paths=new Set(),eventIds=new Set();
+    for(const t of tracks){check();
+      if(!validId(t.id)||trackIds.has(t.id)||!index.has(t.folder_id))throw Error('Duplicate track or unknown folder');trackIds.add(t.id);
+      assertPath(t.file);if(paths.has(t.file)||!t.file.endsWith('.sseq')||!t.file.startsWith('music/'))throw Error('Invalid SSEQ ZIP path');paths.add(t.file);
+      if(t.folder_path!==index.get(t.folder_id).path)throw Error('Folder metadata mismatch');
+      if(t.event_id!==null){if(!Number.isInteger(t.event_id)||eventIds.has(t.event_id))throw Error('Duplicate/invalid music assignment');eventIds.add(t.event_id)}
+      const blob=entries.get(t.file);if(!blob||blob.size!==t.bytes||await sha256(blob)!==t.sha256)throw Error('Missing/corrupted SSEQ '+t.file);
+      const parsed=root.SigmaSSEQ.parse(new Uint8Array(await blob.arrayBuffer()),{profiles:root.SigmaBankProfiles,slot:t.source_slot,maxBytes:65536});
+      if(parsed.notes.length!==t.notes||parsed.tempo!==t.tempo||parsed.infinite!==t.loop_enabled||
+         root.SigmaSSEQ.profileSlot(root.SigmaBankProfiles,t.source_slot).bankId!==t.bank_id)throw Error('SSEQ/bank metadata mismatch '+t.id);
     }
     const expected=new Set(['manifest.json','folders.json','tracks.json','checksums.sha256','README.txt',...tracks.map(t=>t.file)]);
-    if(entries.size!==expected.size||[...entries.keys()].some(n=>!expected.has(n)))throw Error('Missing or unexpected entries in ZIP');
-    const rows=(await read('checksums.sha256')).trim().split('\n');
-    if(rows.length!==expected.size-2)throw Error('Incomplete checksum inventory');
-    const checked=new Set();
-    for(const row of rows){const m=/^([a-f0-9]{64})  (.+)$/.exec(row);if(!m||checked.has(m[2])||m[2]==='checksums.sha256'||!expected.has(m[2])||await sha256(entries.get(m[2]))!==m[1])throw Error('Invalid checksum inventory');checked.add(m[2]);}
-    for(const name of expected)if(name!=='checksums.sha256'&&name!=='README.txt'&&!checked.has(name))throw Error('Missing checksum entry for '+name);
-    return {ok:true,tracks:tracks.length,folders:folders.length,bytes:zip.size};
+    if(entries.size!==expected.size||[...entries.keys()].some(n=>!expected.has(n)))throw Error('Extra/missing ZIP contents');
+    const lines=(await read('checksums.sha256')).trim().split('\n');if(lines.length!==expected.size-2)throw Error('Incomplete checksum list');
+    const recorded=new Set();for(const line of lines){const m=/^([a-f0-9]{64})  (.+)$/.exec(line);
+      if(!m||recorded.has(m[2])||!entries.has(m[2])||await sha256(entries.get(m[2]))!==m[1])throw Error('Invalid checksum list');recorded.add(m[2]);}
+    for(const name of expected)if(name!=='checksums.sha256'&&name!=='README.txt'&&!recorded.has(name))throw Error('Missing checksum '+name);
+    return {ok:true,tracks:tracks.length,bytes:zip.size};
   }
-  root.SigmaDexExport={FORMAT,VERSION,RATE,safeName,folderIndex,createFolder,moveFolder,selectedTrackPlan,wavInfo,sha256,packageFiles,verifyPackage};
+  root.SigmaDexExport={FORMAT,VERSION,safeName,folderIndex,createFolder,moveFolder,selectedTrackPlan,sha256,packageFiles,verifyPackage};
 })(typeof window!=='undefined'?window:globalThis);

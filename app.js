@@ -1,12 +1,12 @@
 /* sigma-themes public release: no login, read-only catalog, verified server-side contribution pipeline.
-   Personal playlists/favorites/queue stay in this browser. Nintendo DS export is audio assets, NOT a ROM patch. */
+   Personal playlists/favorites/queue stay in this browser. Published music and exports are SSEQ-only; no ROM patch is created. */
 (() => {
 'use strict';
 const $=(s,p=document)=>p.querySelector(s), $$=(s,p=document)=>[...p.querySelectorAll(s)];
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uuid=()=>globalThis.crypto?.randomUUID?.() || ('local-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
 const fmt=s=>Number.isFinite(Number(s))?`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`:'0:00';
-const audio=$('#audio');
+const audio=new window.SigmaSeqAudio();
 const state={tracks:[],playlists:[],items:[],likes:[],view:'all',queue:[],baseQueue:[],index:-1,playingId:null,shuffle:false,repeat:'off',volume:.8,muted:false,normalize:true,target:-14,sort:'added',search:'',busy:false,ready:false,connected:false,activeProgress:null,dsMappings:{},folderTree:[],trackFolders:{},exportMetadata:{}};
 let pageActive=true,lifecycleEpoch=0,configFlight=null,connectGeneration=0,catalogAbort=null,configAbort=null;
 let config={},playToken=0,blobURL=null,ctx=null,gain=null,uiToastTimer=null,refreshFlight=null,realtimeSocket=null,heartbeat=null,reconnectTimer=null,refreshTimer=null,refreshDelay=null,drag=null,queueDrag=null,activeUpload=null,uploadOp=null,exportOp=null,pendingResume=null,historyTick=0,archiveUrls=[];
@@ -161,16 +161,16 @@ async function playAt(index,{restore=false}={}){
  if(!restore)pendingResume=null;
  state.index=index;state.playingId=id;persist();renderPlayer();
  try{
-  audio.crossOrigin='anonymous';audio.src='/api/audio?id='+encodeURIComponent(id);audio.load();
+  audio.slot=Number(t.sseq_id);audio.crossOrigin='anonymous';audio.src='/api/audio?id='+encodeURIComponent(id);await audio.load();
   await enableAudio();if(token!==playToken)return;
   await audio.play();
  }catch(e){if(token===playToken)toast('Audio could not be played: '+e.message,true)}
  if(token===playToken)renderPlayer();
 }
 function stop(){++playToken;audio.pause();audio.removeAttribute('src');releaseURL();state.index=-1;state.playingId=null;persist();renderPlayer()}
-async function enableAudio(){try{if(!ctx){const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return;ctx=new AudioCtx();const source=ctx.createMediaElementSource(audio);gain=ctx.createGain();source.connect(gain).connect(ctx.destination)}if(ctx.state==='suspended')await ctx.resume();applyGain();}catch(e){console.warn('Audio context:',e)}}
+async function enableAudio(){if(audio.isSigmaSseq){audio.setSoundMode(state.normalize,state.target);return;}try{if(!ctx){const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return;ctx=new AudioCtx();const source=ctx.createMediaElementSource(audio);gain=ctx.createGain();source.connect(gain).connect(ctx.destination)}if(ctx.state==='suspended')await ctx.resume();applyGain();}catch(e){console.warn('Audio context:',e)}}
 function gainDB(){const t=current();if(!state.normalize||!Number.isFinite(t?.lufs)||!Number.isFinite(t?.true_peak))return 0;return Math.max(-45,Math.min(0,Number(state.target)-t.lufs,-1-t.true_peak))}
-function applyGain(){if(gain&&ctx)gain.gain.setTargetAtTime(Math.pow(10,gainDB()/20),ctx.currentTime,.035)}
+function applyGain(){if(audio.isSigmaSseq){audio.setSoundMode(state.normalize,state.target);return;}if(gain&&ctx)gain.gain.setTargetAtTime(Math.pow(10,gainDB()/20),ctx.currentTime,.035)}
 function advance(step=1){if(!state.queue.length)return;if(step<0&&audio.currentTime>3){audio.currentTime=0;return}const live=new Set(state.tracks.map(t=>t.id));const i=SigmaCore.nextPlayableIndex(state.queue,state.index,step,live,state.repeat);if(i<0){audio.pause();audio.currentTime=0;renderPlayer();persist();return}void playAt(i)}
 function toggleShuffle(){const next=!state.shuffle;if(!state.queue.length){setQueue(viewTracks().map(x=>x.id),next);return}const prefix=state.queue.slice(0,Math.max(0,state.index)+1),rest=state.queue.slice(Math.max(0,state.index)+1);state.queue=[...prefix,...(next?randomize(rest):state.baseQueue.filter(id=>rest.includes(id)))];state.shuffle=next;persist();renderPlayer()}
 function renderPlayer(){const t=current()||(state.playingId?missingTrack(state.playingId):null);$('#playingTitle').textContent=t?.title||'Nothing playing';$('#playingArtist').textContent=t?.artist||'sigma-themes';const img=art(t||{title:'sigma',artist:'themes'});if($('#playingCover').getAttribute('src')!==img)$('#playingCover').src=img;$('#playPause').textContent=audio.paused?'▶':'❚❚';$('#shuffleToggle').classList.toggle('active',state.shuffle);$('#repeatToggle').classList.toggle('active',state.repeat!=='off');$('#repeatToggle').textContent=state.repeat==='one'?'↻₁':'↻';$('#repeatToggle').title='Repeat '+state.repeat;$('#mute').textContent=state.muted||state.volume===0?'◖':'◖))';$('#volume').value=state.volume;$('#elapsed').textContent=fmt(audio.currentTime);$('#duration').textContent=fmt(Number.isFinite(audio.duration)?audio.duration:t?.duration_s||0);$('#seek').value=audio.duration?Math.round(audio.currentTime/audio.duration*1000):0;$('#normalizeToggle').checked=!!state.normalize;$('#normalizeLevel').value=String(state.target)}
@@ -223,7 +223,7 @@ function songOptions(id){const t=state.tracks.find(t=>t.id===id);if(!t)return;
  const dur=Number(t.duration_s)||0,loopStart=Number.isFinite(Number(map.loop_start_sec))?Number(map.loop_start_sec):0;
  const loopEnd=Number.isFinite(Number(map.loop_end_sec))?Number(map.loop_end_sec):dur;
  modal(`<h2>${escapeHTML(t.title)}</h2><p class="hint">${escapeHTML(t.artist)} · ${escapeHTML(t.original_filename||'')}</p>
- <button class="btn" data-action="add" data-id="${escapeHTML(id)}">＋ Add to playlist</button> <button class="btn" data-action="download" data-id="${escapeHTML(id)}">↓ Download original</button>
+ <button class="btn" data-action="add" data-id="${escapeHTML(id)}">＋ Add to playlist</button> <button class="btn" data-action="download" data-id="${escapeHTML(id)}">↓ Download SSEQ</button>
  <div class="folder-editor"><label>Export title</label><input id="editExportTitle" value="${escapeHTML(map.title||t.title)}" maxlength="220">
  <label>Composer / artist</label><input id="editExportArtist" value="${escapeHTML(map.artist||t.artist)}" maxlength="220">
  <label>Music folder</label><select id="editTrackFolder">${folders.map(f=>`<option value="${escapeHTML(f.id)}" ${(state.trackFolders[id]||'root')===f.id?'selected':''}>${escapeHTML(f.path||'Music')}</option>`).join('')}</select>
@@ -231,10 +231,10 @@ function songOptions(id){const t=state.tracks.find(t=>t.id===id);if(!t)return;
  <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="loopInput" style="width:auto;min-height:auto" ${map.loop_enabled!==false?'checked':''}>Loop song</label>
  <label>Loop start (seconds)</label><input id="loopStartInput" type="number" min="0" step="0.01" value="${loopStart}">
  <label>Loop end (seconds)</label><input id="loopEndInput" type="number" min="0" step="0.01" value="${loopEnd}">
- <audio controls preload="none" id="loopPreviewAudio" style="width:100%;margin:10px 0" src="/api/audio?id=${encodeURIComponent(id)}"></audio>
- <p class="hint">Preview stops at the loop end and returns to the start. Export points are rounded to ADPCM block boundaries.</p>
+ <button class="btn" id="previewStoredSseq">▶ Preview stored SSEQ in player</button>
+ <p class="hint">The SSEQ loop is encoded in the published sequence. Local loop-editor metadata does not rewrite stored SSEQ bytes; changing a SSEQ loop requires a new converted revision.</p>
  <button class="btn primary" id="saveMapping">Save song settings</button></div>`);
- const preview=$('#loopPreviewAudio');preview.ontimeupdate=()=>{const a=Number($('#loopStartInput').value),b=Number($('#loopEndInput').value);if($('#loopInput').checked&&Number.isFinite(a)&&Number.isFinite(b)&&a<b&&preview.currentTime>=b)preview.currentTime=a};
+ const preview={pause(){}};$('#previewStoredSseq').onclick=()=>{closeModal();setQueue([id],false);void playAt(0)};
  $('#saveMapping').onclick=()=>{const title=$('#editExportTitle').value.trim(),artist=$('#editExportArtist').value.trim();
  const raw=$('#sseqInput').value,idValue=raw===''?null:Number(raw),enabled=$('#loopInput').checked;
  const start=Number($('#loopStartInput').value),end=Number($('#loopEndInput').value);
@@ -252,7 +252,7 @@ function moveQueue(i,j){if(j<0||j>=state.queue.length||i===j)return;let [id]=sta
 function download(blob,name){const link=document.createElement('a'),url=URL.createObjectURL(blob);link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),90000)}
 async function fetchTrack(t,signal){SigmaCore.aborted(signal);const res=await fetch('/api/audio?id='+encodeURIComponent(t.id),{cache:'no-store',signal});if(!res.ok)throw Error(`Audio unavailable (${res.status})`);const len=Number(res.headers.get('content-length'));if(len&&len!==t.size_bytes)throw Error('Unexpected file size');const blob=await res.blob();SigmaCore.aborted(signal);if(blob.size!==t.size_bytes)throw Error('Audio file size differs from catalog');const hash=await sha256(blob);if(hash!==t.sha256)throw Error('SHA-256 failed for '+t.title);SigmaCore.aborted(signal);return blob}
 async function sha256(file){const digest=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());return [...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,'0')).join('')}
-async function audioMetadata(file){const name=file.name.replace(/\.[^.]+$/,''),p=name.split(/\s+[-–—]\s+/);let title=p.length>1?p.slice(1).join(' - '):name,artist=p.length>1?p[0]:'Unknown artist';const url=URL.createObjectURL(file);let duration=0;try{duration=await new Promise(resolve=>{const a=new Audio(),timer=setTimeout(()=>resolve(0),6000);a.onloadedmetadata=()=>{clearTimeout(timer);resolve(Number.isFinite(a.duration)?a.duration:0)};a.onerror=()=>{clearTimeout(timer);resolve(0)};a.src=url})}finally{URL.revokeObjectURL(url)}let tags={};try{tags=await window.SigmaMetadata?.read(file)||{}}catch(e){console.warn('Embedded tags unavailable',e)}
+async function audioMetadata(file){const name=file.name.replace(/\.[^.]+$/,''),p=name.split(/\s+[-–—]\s+/);let title=p.length>1?p.slice(1).join(' - '):name,artist=p.length>1?p[0]:'Unknown artist';const mediaFile=!/\.(sseq|mid|midi)$/i.test(file.name);const url=mediaFile?URL.createObjectURL(file):null;let duration=0;try{if(mediaFile)duration=await new Promise(resolve=>{const a=new Audio(),timer=setTimeout(()=>resolve(0),6000);a.onloadedmetadata=()=>{clearTimeout(timer);resolve(Number.isFinite(a.duration)?a.duration:0)};a.onerror=()=>{clearTimeout(timer);resolve(0)};a.src=url})}finally{if(url)URL.revokeObjectURL(url)}let tags={};try{tags=await window.SigmaMetadata?.read(file)||{}}catch(e){console.warn('Embedded tags unavailable',e)}
  return {title:String(tags.title||title).slice(0,220),artist:String(tags.artist||artist).slice(0,220),album:String(tags.album||'').slice(0,220),duration}}
 /** Optional asynchronous LUFS measurement. Bounded to avoid decoding huge tracks on mobile.
  * Measurements originate with the contributor (untrusted); player never amplifies based on them. */
@@ -279,8 +279,8 @@ async function loudnessMetrics(file,seconds=0,op=null){
  }catch(e){if(op?.canceled)throw new SigmaCore.CancelledError();console.warn('Loudness analysis unavailable:',e);return null}
  finally{worker?.terminate();if(decoder)void decoder.close().catch(()=>{})}
 }
-function matchesMagic(bytes,ext){if(bytes.length<12)return false;const ascii=(a,b)=>String.fromCharCode(...bytes.slice(a,b));if(ext==='wav')return ascii(0,4)==='RIFF'&&ascii(8,12)==='WAVE';if(ext==='flac')return ascii(0,4)==='fLaC';if(ext==='ogg'||ext==='opus')return ascii(0,4)==='OggS';if(ext==='m4a')return ascii(4,8)==='ftyp';if(ext==='aac')return bytes[0]===255&&(bytes[1]&246)===240;if(ext==='mp3')return ascii(0,3)==='ID3'||(bytes[0]===255&&(bytes[1]&224)===224);return false}
-const extMime={mp3:'audio/mpeg',wav:'audio/wav',flac:'audio/flac',ogg:'audio/ogg',opus:'audio/ogg',m4a:'audio/mp4',aac:'audio/aac'};
+function matchesMagic(bytes,ext){if(bytes.length<12)return false;const ascii=(a,b)=>String.fromCharCode(...bytes.slice(a,b));if(ext==='sseq')return ascii(0,4)==='SSEQ'&&ascii(16,20)==='DATA';if(ext==='wav')return ascii(0,4)==='RIFF'&&ascii(8,12)==='WAVE';if(ext==='flac')return ascii(0,4)==='fLaC';if(ext==='ogg'||ext==='opus')return ascii(0,4)==='OggS';if(ext==='m4a')return ascii(4,8)==='ftyp';if(ext==='aac')return bytes[0]===255&&(bytes[1]&246)===240;if(ext==='mp3')return ascii(0,3)==='ID3'||(bytes[0]===255&&(bytes[1]&224)===224);return false}
+const extMime={sseq:'application/octet-stream'};
 function setProgress(text,percent){state.activeProgress={text,percent};const root=$('#uploadProgress');if(!root)return;root.classList.remove('hide');$('#uploadProgressText').textContent=text;$('#uploadProgressFill').style.width=Math.min(100,Math.max(0,percent))+'%'}
 function clearProgress(){state.activeProgress=null;$('#uploadProgress')?.classList.add('hide')}
 function xhr(method,url,headers,body,onProgress,op){
@@ -372,7 +372,7 @@ async function watchValidation(job){
    }
    if(response.status==='failed'||response.status==='expired'){
      sessionRemove('sigma-validation-'+job.uploadId);
-     toast('Server rejected the audio: '+job.title+'. Check the file format and try again.',true);return;
+     toast('Server rejected the SSEQ: '+job.title+'. Check the file format and try again.',true);return;
    }
   }
   if(pageActive)toast('Audio verification is still queued. It will appear when the server validates it.');
@@ -398,19 +398,28 @@ async function uploadFiles(files){
  const arr=[...files];if(!arr.length)return;
  state.busy=true;$('#uploadBtn').disabled=true;
  const op=SigmaCore.operation();uploadOp=op;let done=0,errors=[];
- try{for(const file of arr){
+ try{for(const sourceFile of arr){
+  let file=sourceFile;
   if(op.canceled)break;
   let hash=null;
   try{
-   if(file.size<64||file.size>config.maxUploadBytes)throw Error('Maximum size is 45 MiB per file');
-   const ext=(file.name.split('.').pop()||'').toLowerCase();if(!extMime[ext])throw Error('Supported: MP3, WAV, FLAC, OGG, OPUS, M4A and AAC');
+   const slot=Number($('#hgSlot').value),program=Number($('#hgProgram').value);
+   setProgress('Converting '+sourceFile.name+' into HeartGold SSEQ',1);
+   const converted=await window.SigmaTranscribe.convertFile(sourceFile,{
+     slot,program,loop:$('#hgLoop').checked,profiles:window.SigmaBankProfiles,signal:op.signal,
+     onProgress:(label,part)=>setProgress(label,3+Math.round(45*part))
+   });
+   op.check();
+   file=new File([converted.bytes],sourceFile.name.replace(/\.[^.]+$/,'')+'.sseq',{type:'application/octet-stream'});
+   if(file.size<30||file.size>config.maxUploadBytes)throw Error('SSEQ exceeds the 64 KiB sequence budget');
+   const ext='sseq';
    const bytes=new Uint8Array(await file.slice(0,32).arrayBuffer());op.check();
-   if(!matchesMagic(bytes,ext))throw Error('Audio header does not match extension');
+   if(!matchesMagic(bytes,ext))throw Error('SSEQ header does not match extension');
    setProgress('Calculating SHA-256',1);hash=await sha256(file);op.hash=hash;op.check();
    if(state.tracks.some(t=>t.sha256===hash)){toast(file.name+': already uploaded');continue}
-   const metadata=await audioMetadata(file);op.check();
-   const measurements=await loudnessMetrics(file,metadata.duration,op);
-   op.check();if(measurements){metadata.lufs=measurements.lufs;metadata.truePeak=measurements.truePeak}
+   const metadata=await audioMetadata(sourceFile);op.check();
+   metadata.slot=slot;metadata.duration=converted.parsed.durationTicks*60/(converted.parsed.tempo*48);
+   metadata.title=metadata.title||sourceFile.name.replace(/\.[^.]+$/,'');
    let reservation;
    const persisted=sessionGet('sigma-upload-'+hash);
    if(persisted){
@@ -443,15 +452,15 @@ async function uploadFiles(files){
    op.reservation=reservation;op.check();
    if(file.size>6*1024*1024)await tusTransfer(file,reservation,hash,op);
    else await regularTransfer(file,reservation,op);
-   op.check();setProgress('Validating file on server',94);
+   op.check();setProgress('Validating SSEQ and HeartGold slot on server',94);
    const completion=await getJSON('/api/upload-finish',{method:'POST',signal:op.signal,headers:{'Content-Type':'application/json'},
     body:JSON.stringify({uploadId:reservation.uploadId,receipt:reservation.receipt,metadata})});
    op.check();sessionRemove('sigma-upload-'+hash);if(op.reservation?.uploadId)sessionRemove(sessionKey(hash,op.reservation.uploadId));
-   op.reservation=null;op.hash=null;done++;setProgress('Awaiting trusted audio validation',100);
+   op.reservation=null;op.hash=null;done++;setProgress('Awaiting trusted SSEQ validation',100);
    const pendingJob={uploadId:reservation.uploadId,receipt:reservation.receipt,title:metadata.title};
    sessionSet('sigma-validation-'+reservation.uploadId,JSON.stringify(pendingJob));
    void watchValidation(pendingJob);
-   toast('Uploaded '+metadata.title+'; awaiting FFmpeg verification. It will appear in the library after approval.');
+   toast('Converted '+metadata.title+' to '+file.size+' SSEQ bytes; awaiting server event/bank validation.'+(converted.programSubstitutions?.length?' Lead program automatically changed to bank-compatible program '+converted.programSubstitutions[0].selected+'.':''));
   }catch(e){
    if(op.canceled || SigmaCore.classify(e)==='cancelled'){
     if(hash){sessionRemove('sigma-upload-'+hash);if(op.reservation?.uploadId)sessionRemove(sessionKey(hash,op.reservation.uploadId))}
@@ -480,8 +489,8 @@ function openSigmaExportPicker(){
  <div class="message" id="sigmaExportEstimate"></div><button class="btn primary" id="beginSigmaExport">↓ Prepare Sigma Dex ZIP</button></div>`);
  const scope=()=>$('input[name="sigmaScope"]:checked').value;
  const selection=()=>{try{return SigmaDexExport.selectedTrackPlan({tracks:state.tracks,folders:state.folderTree,assignments:state.trackFolders,metadata:state.exportMetadata,scope:scope(),selectedIds:$$('[data-sigma-track]:checked').map(x=>x.value),selectedFolderIds:$$('[data-sigma-folder]:checked').map(x=>x.value)});}catch(e){return {error:e.message,tracks:[],folders:[]}}};
- const update=()=>{$('#sigmaExportSelection').classList.toggle('hide',scope()!=='selected');const p=selection();if(p.error){$('#sigmaExportEstimate').textContent='Check settings: '+p.error;$('#beginSigmaExport').disabled=true;return}const seconds=p.tracks.reduce((n,t)=>n+t.duration_s,0);const mb=seconds*32728/505*512/1048576;
- $('#sigmaExportEstimate').textContent=`${p.tracks.length} songs · ${Math.max(0,p.folders.length-1)} folders · about ${mb.toFixed(1)} MiB of DS audio. ${p.tracks.filter(t=>t.loop_enabled).length} looping.`;$('#beginSigmaExport').disabled=!p.tracks.length;};
+ const update=()=>{$('#sigmaExportSelection').classList.toggle('hide',scope()!=='selected');const p=selection();if(p.error){$('#sigmaExportEstimate').textContent='Check settings: '+p.error;$('#beginSigmaExport').disabled=true;return}const bytes=p.tracks.reduce((n,t)=>n+Number(t.source_bytes||0),0);
+ $('#sigmaExportEstimate').textContent=`${p.tracks.length} songs · ${Math.max(0,p.folders.length-1)} folders · ${bytes.toLocaleString()} SSEQ bytes (before ZIP overhead). ${p.tracks.filter(t=>t.loop_enabled).length} looping.`;$('#beginSigmaExport').disabled=!p.tracks.length;};
  $$('input[name="sigmaScope"], [data-sigma-folder], [data-sigma-track]').forEach(x=>x.addEventListener('change',update));update();
  $('#beginSigmaExport').onclick=()=>{const p=selection();if(p.error||!p.tracks.length)return toast(p.error||'Choose music',true);const ids=p.tracks.map(t=>t.id);if(new Set(p.tracks.map(t=>t.event_id).filter(x=>x!==null)).size!==p.tracks.filter(t=>t.event_id!==null).length)return toast('Music/event IDs must be unique across exported songs',true);closeModal();void exportSigmaDex(p)};
 }
@@ -490,12 +499,12 @@ async function exportSigmaDex(plan){
  const encoded=new Map();
  try{
   for(let i=0;i<plan.tracks.length;i++){
-   op.check();const t=plan.tracks[i];setProgress(`Sigma Dex ${i+1}/${plan.tracks.length}: fetching ${t.title}`,100*i/plan.tracks.length);
+   op.check();const t=plan.tracks[i];setProgress(`Sigma Dex ${i+1}/${plan.tracks.length}: fetching SSEQ ${t.title}`,100*i/plan.tracks.length);
    const input=await fetchTrack(t.source,op.signal);op.check();
-   const fullLoop=t.loop_enabled&&t.loop_start_sec===0&&Math.abs(t.loop_end_sec-t.duration_s)<.05;
-   const loop=t.loop_enabled?(fullLoop?true:{start:t.loop_start_sec,end:t.loop_end_sec}):false;
-   const output=await SigmaDS.convert(input,{rate:32728,channels:2,format:'adpcm',loop,signal:op.signal,onProgress:p=>{op.check();setProgress(`Sigma Dex ${i+1}/${plan.tracks.length}: ${p}`,100*i/plan.tracks.length)}});
-   op.check();encoded.set(t.id,output);
+   const data=new Uint8Array(await input.arrayBuffer());
+   window.SigmaSSEQ.parse(data,{slot:Number(t.source.sseq_id),profiles:window.SigmaBankProfiles});
+   if(t.source.sha256 && await sha256(input)!==t.source.sha256)throw Error('Source SSEQ SHA-256 mismatch: '+t.title);
+   encoded.set(t.id,input);
   }
   setProgress('Verifying complete Sigma Dex ZIP',96);
   const data=await SigmaDexExport.packageFiles(plan,encoded,{signal:op.signal,onProgress:(i,n)=>setProgress(`Verifying ${i}/${n}`,96+3*i/n)});
@@ -508,12 +517,12 @@ function openExportPicker(kind){
  if(state.busy)return toast('Another operation is in progress',true);
  const all=state.tracks; if(!all.length)return toast('No songs available to export',true);
  const filtered=viewTracks().filter(t=>!t.unavailable),scopeName=state.view.startsWith('playlist:')?'Current playlist':state.view==='liked'?'Favorites / current view':'Current view';
- modal(`<h2>${kind==='ds'?'HeartGold audio pack':'Music backup'}</h2><p class="hint">Choose exactly which songs to export. This creates ${kind==='ds'?'DS-format WAV assets (not an installed game patch)':'verified ZIP archives in parts where necessary'}.</p>
+ modal(`<h2>Music backup</h2><p class="hint">Choose exactly which songs to export. This creates verified SSEQ ZIP archives in parts where necessary.</p>
  <label><input type="radio" name="exportScope" value="all" checked> All available songs (${all.length})</label>
  <label><input type="radio" name="exportScope" value="view"> ${escapeHTML(scopeName)} (${filtered.length})</label>
  <label><input type="radio" name="exportScope" value="selected"> Select songs individually</label>
  <div id="exportSelection" class="export-selection hide">${all.map(t=>`<label><input type="checkbox" value="${escapeHTML(t.id)}" data-export-select> ${escapeHTML(t.title)} — ${escapeHTML(t.artist)}</label>`).join('')}</div>
- <button class="btn primary" id="beginExport">Prepare ${kind==='ds'?'HeartGold pack':'ZIP backup'}</button>`);
+ <button class="btn primary" id="beginExport">Prepare ZIP backup</button>`);
  const toggle=()=>$('#exportSelection').classList.toggle('hide',$('input[name="exportScope"]:checked').value!=='selected');
  $$('input[name="exportScope"]').forEach(e=>e.onchange=toggle);
  $('#beginExport').onclick=()=>{
@@ -522,7 +531,7 @@ function openExportPicker(kind){
   const tracks=SigmaCore.chooseTracks(all,scope,picked,filtered.map(t=>t.id));
   if(!tracks.length)return toast('Choose at least one song.',true);
   closeModal();
-  if(kind==='ds')void exportDS(tracks);else void backup(tracks);
+  void backup(tracks);
  };
 }
 function presentArchives(files,heading){
@@ -545,7 +554,8 @@ async function backup(tracks=state.tracks.slice()){
    for(let i=0;i<subset.length;i++){
     const t=subset[i];op.check();setProgress(`Part ${k+1}/${parts.length}: verifying ${i+1}/${subset.length}`,100*i/Math.max(1,subset.length));
     const audioBlob=await fetchTrack(t,op.signal);
-    const name=`audio/${t.id}.${(t.original_filename||'audio.mp3').split('.').pop().replace(/[^a-z0-9]/gi,'')}`;
+    const name=SigmaCore.sseqBackupPath(t.id);
+    window.SigmaSSEQ.parse(new Uint8Array(await audioBlob.arrayBuffer()),{slot:Number(t.sseq_id),profiles:window.SigmaBankProfiles,maxBytes:65536});
     files.push({name,blob:audioBlob});manifest.tracks.push({...t,backup_path:name});
    }
    files.unshift({name:'sigma-library.json',blob:new Blob([JSON.stringify(manifest,null,2)],{type:'application/json'})});
@@ -566,73 +576,31 @@ async function importBackup(file){if(state.busy||!file)return;state.busy=true;tr
    if(!confirm(`Restore ${m.playlists.length} personal playlists and ${m.likes?.length||0} favorites? Songs absent from this public library cannot be restored without re-uploading them.`))return;
  const live=new Set(state.tracks.map(t=>t.id));state.playlists=m.playlists.filter(p=>typeof p.id==='string'&&typeof p.name==='string').slice(0,200);state.items=m.items.filter(i=>state.playlists.some(p=>p.id===i.playlist_id));state.likes=(m.likes||[]).filter(l=>typeof l.track_id==='string');state.dsMappings=m.dsMappings||{};try{SigmaDexExport.folderIndex(m.folderTree||[]);state.folderTree=m.folderTree||[];state.trackFolders=m.trackFolders||{};state.exportMetadata=m.exportMetadata||{}}catch{toast('Backup folder data invalid; kept existing folders',true)}persist();render();toast('Personal playlists and favorites restored. Unavailable song references were preserved.');}
  catch(e){toast('Import failed: '+e.message,true)}finally{state.busy=false;$('#backupInput').value=''}}
-async function exportDS(tracks=state.tracks.slice()){
- if(!tracks.length)return toast('Select a song first',true);if(state.busy)return;
- try{SigmaCore.assertDistinctMappings(tracks,state.dsMappings)}catch(e){return toast(e.message,true)}
- if(!confirm(`Export ${tracks.length} chosen songs as 32,728 Hz IMA-ADPCM WAV? This is an audio asset pack, NOT a HeartGold patch.`))return;
- state.busy=true;const op=SigmaCore.operation();exportOp=op;
- const btn=$('#gameExportBtn');btn.disabled=true;
- try{
-  const outputs=[],files=[];
-  const manifest={format:'sigma-themes/heartgold-audio-pack-v3',created_at:new Date().toISOString(),status:'audio-only-requires-streaming-hook',sample_rate:32728,codec:'RIFF WAVE IMA-ADPCM',tracks:[],
-   playlists:state.playlists.map(p=>({id:p.id,name:p.name,tracks:state.items.filter(i=>i.playlist_id===p.id&&tracks.some(t=>t.id===i.track_id)).sort((a,b)=>a.position-b.position).map(i=>i.track_id)}))};
-  for(let i=0;i<tracks.length;i++){
-   op.check();const t=tracks[i],map=state.dsMappings[t.id]||{};
-   setProgress(`Converting ${i+1}/${tracks.length}: ${t.title}`,100*i/tracks.length);
-   const original=await fetchTrack(t,op.signal);
-   const output=await SigmaDS.convert(original,{rate:32728,channels:2,format:'adpcm',loop:map.loop_enabled!==false,signal:op.signal,
-     onProgress:s=>{op.check();setProgress(`${i+1}/${tracks.length}: ${s}`,100*i/tracks.length)}});
-   op.check();const b=new Uint8Array(await output.slice(0,40).arrayBuffer());
-   if(String.fromCharCode(...b.slice(0,4))!=='RIFF'||String.fromCharCode(...b.slice(8,12))!=='WAVE'||(b[20]|(b[21]<<8))!==17|| (b[22]|(b[23]<<8))!==2 || new DataView(b.buffer).getUint32(24,true)!==32728)throw Error('Output format validation failed');
-   const name=`music/${String(i+1).padStart(3,'0')}_${t.id}.wav`;
-   files.push({name,blob:output});manifest.tracks.push({id:t.id,title:t.title,artist:t.artist,source_sha256:t.sha256,output_sha256:await sha256(output),file:name,sseq_id:map.sseq_id??null,loop:map.loop_enabled!==false,bytes:output.size});
-  }
-  // Each archive is independently usable: local manifest, mapping, notes, and SHA-256 inventory.
-  const exportId=uuid();manifest.export_id=exportId;
-  const audioFiles=files.slice();
-  const parts=SigmaCore.partitionDS(audioFiles);
-  const inventory=manifest.tracks.map(t=>({id:t.id,file:t.file,sha256:t.output_sha256,bytes:t.bytes,
-    part:parts.findIndex(g=>g.some(f=>f.name===t.file))+1,sseq_id:t.sseq_id}));
-  if(inventory.some(x=>x.part<1))throw Error('Unassigned DS output');
-  const overview={format:'sigma-themes/heartgold-export-overview-v1',export_id:exportId,
-    status:'audio-only-requires-streaming-hook',total_parts:parts.length,tracks:inventory};
-  for(let i=0;i<parts.length;i++){
-   op.check();const group=parts[i];const partManifest=SigmaCore.dsPartManifest(manifest,group,i+1,parts.length);
-   const csv=['sseq_id,track_id,file,sha256',...partManifest.tracks.map(t=>`${t.sseq_id??''},"${t.id}","${t.file}",${t.output_sha256}`)].join('\n')+'\n';
-   const note=`SIGMA THEMES – DS WAV ASSETS\nExport: ${exportId}\nPart ${i+1} of ${parts.length}\n\n`+
-    `Contains ${group.length} IMA-ADPCM WAV files at 32728Hz.\n`+
-    'This is NOT an installed HeartGold patch. A verified game-specific streaming hook is required.\n';
-   const entries=[...group,
-    {name:'manifest.json',blob:new Blob([JSON.stringify(partManifest,null,2)],{type:'application/json'})},
-    {name:'sequence-map.csv',blob:new Blob([csv],{type:'text/csv'})},
-    {name:'READ_FIRST.txt',blob:new Blob([note])},
-    {name:'export-overview.json',blob:new Blob([JSON.stringify(overview,null,2)],{type:'application/json'})}];
-   const zip=await SigmaDS.zip(entries,(n,total)=>{op.check();setProgress(`Packaging DS part ${i+1}/${parts.length}`,100*n/total)});
-   op.check();await SigmaDS.verifyZip(zip);op.check();
-   // Verify all expected names and checksums rather than trusting a successful ZIP writer.
-   const unzipped=await SigmaDS.unzip(zip);
-   for(const track of partManifest.tracks){
-    op.check();const blob=unzipped.get(track.file);
-    if(!blob||blob.size!==track.bytes||(await sha256(blob))!==track.output_sha256)throw Error('DS ZIP content checksum mismatch: '+track.file);
-   }
-   for(const key of ['manifest.json','sequence-map.csv','READ_FIRST.txt','export-overview.json'])if(!unzipped.has(key))throw Error('Missing DS part metadata: '+key);
-   outputs.push({name:`sigma-themes-DS-assets-${new Date().toISOString().slice(0,10)}-part${i+1}of${parts.length}.zip`,blob:zip});
-  }
-  presentArchives(outputs,`Verified DS audio assets · ${tracks.length} tracks · ${parts.length} parts`);
- }catch(e){toast((op.canceled?'DS export canceled: ':'DS export FAILED: ')+e.message,true)}
- finally{exportOp=null;state.busy=false;btn.disabled=false;btn.textContent='↓ HeartGold pack';clearProgress()}
-}
 function startDrag(e){const h=e.target.closest('.drag-handle');if(!h||e.button!==0||!(state.view==='liked'||state.view.startsWith('playlist:')))return;const row=h.closest('.track');drag={id:row.dataset.id,startY:e.clientY,startX:e.clientX,row,from:row.getBoundingClientRect(),target:null,active:false};h.setPointerCapture(e.pointerId);e.preventDefault()}
 function dragMove(e){const d=drag;if(!d)return;if(!d.active&&Math.hypot(e.clientY-d.startY,e.clientX-d.startX)<6)return;if(!d.active){d.active=true;d.row.classList.add('dragging')};$$('.drop-before,.drop-after').forEach(el=>el.classList.remove('drop-before','drop-after'));const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.track');if(target&&target!==d.row){d.target=target.dataset.id;target.classList.add(e.clientY<target.getBoundingClientRect().top+target.clientHeight/2?'drop-before':'drop-after')};const container=$('#content'),rect=container.getBoundingClientRect();if(e.clientY>rect.bottom-60)container.scrollTop+=13;else if(e.clientY<rect.top+60)container.scrollTop-=13}
 function dragEnd(){const d=drag;drag=null;if(!d)return;d.row.classList.remove('dragging');$$('.drop-before,.drop-after').forEach(el=>el.classList.remove('drop-before','drop-after'));if(!d.active||!d.target)return;const ids=viewTracks().map(t=>t.id),from=ids.indexOf(d.id),to=ids.indexOf(d.target);if(from!==to)reorder(d.id,to-from)}
 function queueDragStart(e){const handle=e.target.closest('.queue-handle');if(!handle||e.button!==0)return;const row=handle.closest('[data-queue-row]');queueDrag={from:Number(row.dataset.queueRow),startY:e.clientY,target:null};handle.setPointerCapture(e.pointerId);e.preventDefault()}
 function queueDragMove(e){if(!queueDrag)return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-queue-row]');if(target)queueDrag.target=Number(target.dataset.queueRow)}
 function queueDragEnd(){if(!queueDrag)return;const d=queueDrag;queueDrag=null;if(d.target!==null)moveQueue(d.from,d.target)}
+// HeartGold slot/program options derived from the user's local SBNK and bankkart.json.
+function setupHeartGoldTargets(){
+ const select=$('#hgSlot'),p=$('#hgProgram');if(!select||!p||!window.SigmaBankProfiles)throw Error('HeartGold bank profile unavailable');
+ const profiles=window.SigmaBankProfiles;
+ const slots=Object.entries(profiles.sequence_slots).filter(([id,v])=>profiles.banks[String(v.bank)]).sort((a,b)=>Number(a[0])-Number(b[0]));
+ select.replaceChildren(...slots.map(([id,s])=>{const option=document.createElement('option');option.value=id;option.textContent=`${id} · ${s.name} (bank ${s.bank})`;return option}));
+ select.value=profiles.sequence_slots['1028']?'1028':slots[0]?.[0];
+ const update=()=>{const info=window.SigmaSSEQ.profileSlot(profiles,Number(select.value)),old=p.value;
+  p.replaceChildren(...info.bank.programs.map(pg=>{const option=document.createElement('option');option.value=pg.index;option.textContent=`Program ${pg.index} · SBNK type ${pg.kind}`;return option}));
+  p.value=info.bank.programs.some(pg=>String(pg.index)===old)?old:String(info.bank.programs[0]?.index??0);
+ };
+ select.addEventListener('change',update);update();
+}
+setupHeartGoldTargets();
 // Browser events.
 $('#menuBtn').onclick=()=>{$('#sidebar').classList.toggle('open');$('#scrim').classList.toggle('hide')};$('#scrim').onclick=closeMenu;
 $('#refreshBtn').onclick=()=>void refreshService();$('#newPlaylist').onclick=createPlaylist;$('#newFolder').onclick=()=>newFolder();$('#sigmaExportBtn').onclick=openSigmaExportPicker;
 $('#uploadBtn').onclick=()=>state.ready?$('#fileInput').click():toast('Configure Vercel and Supabase to enable uploads',true);$('#cancelUpload').onclick=cancelUpload;
-$('#fileInput').onchange=e=>void uploadFiles(e.target.files);$('#backupBtn').onclick=()=>openExportPicker('backup');$('#restoreBtn').onclick=()=>$('#backupInput').click();$('#backupInput').onchange=e=>void importBackup(e.target.files[0]);$('#gameExportBtn').onclick=()=>openExportPicker('ds');
+$('#fileInput').onchange=e=>void uploadFiles(e.target.files);$('#backupBtn').onclick=()=>openExportPicker('backup');$('#restoreBtn').onclick=()=>$('#backupInput').click();$('#backupInput').onchange=e=>void importBackup(e.target.files[0]);
 $('#heroPlay').onclick=()=>{const ids=viewTracks().map(t=>t.id);if(!ids.length)return toast('No songs in this collection');setQueue(ids,false);void playAt(0)};
 $('#heroShuffle').onclick=()=>{const ids=viewTracks().map(t=>t.id);if(!ids.length)return toast('No songs in this collection');setQueue(ids,true);void playAt(0)};
 $('#playPause').onclick=()=>{if(!state.queue.length){const ids=viewTracks().map(t=>t.id);if(!ids.length)return toast('Upload a song first');setQueue(ids,false);void playAt(0)}else if(audio.paused){if(audio.src){void enableAudio().then(()=>audio.play().catch(e=>toast(e.message,true)))}else void playAt(state.index<0?0:state.index)}else audio.pause()};
@@ -645,8 +613,8 @@ $('#trackList').onclick=e=>{const play=e.target.closest('[data-play-id]'),action
 $('#trackList').onkeydown=e=>{const b=e.target.closest('[data-play-id]');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();b.click()}if(e.target.classList.contains('drag-handle')&&e.altKey&&(e.key==='ArrowUp'||e.key==='ArrowDown')){e.preventDefault();reorder(e.target.closest('.track').dataset.id,e.key==='ArrowUp'?-1:1)}};
 $('#trackList').addEventListener('pointerdown',startDrag);window.addEventListener('pointermove',dragMove);window.addEventListener('pointerup',dragEnd);window.addEventListener('pointercancel',dragEnd);
 $('#modalRoot').addEventListener('pointerdown',queueDragStart);window.addEventListener('pointermove',queueDragMove);window.addEventListener('pointerup',queueDragEnd);window.addEventListener('pointercancel',()=>{queueDrag=null});
-$('#modalRoot').onclick=e=>{const add=e.target.closest('[data-addto]'),newPl=e.target.closest('[data-create-from]'),move=e.target.closest('[data-queue-move]'),play=e.target.closest('[data-queue-play]'),action=e.target.closest('[data-action]');if(add){addPlaylistTrack(add.dataset.track,add.dataset.addto);closeModal()}else if(newPl){const id=newPl.dataset.createFrom;closeModal();createPlaylist();if(state.view.startsWith('playlist:'))addPlaylistTrack(id,state.view.slice(9))}else if(move)moveQueue(Number(move.dataset.queueIndex),Number(move.dataset.queueIndex)+Number(move.dataset.queueMove));else if(play){closeModal();void playAt(Number(play.dataset.queuePlay))}else if(action){if(action.dataset.action==='add'){closeModal();choosePlaylist(action.dataset.id)}else if(action.dataset.action==='download'){const t=state.tracks.find(t=>t.id===action.dataset.id);if(t){closeModal();void fetchTrack(t).then(b=>download(b,t.original_filename)).catch(e=>toast(e.message,true))}}}};
-audio.onplay=renderPlayer;audio.onpause=renderPlayer;audio.onended=()=>{if(state.repeat==='one'){audio.currentTime=0;void audio.play()}else advance(1)};audio.onloadedmetadata=()=>{if(pendingResume){const id=current()?.id;const seconds=SigmaCore.validResume(pendingResume,id,audio.duration);if(seconds!==null && audio.currentSrc.includes(encodeURIComponent(id))){audio.currentTime=seconds;pendingResume=null;}else if(id&&pendingResume.trackId!==id){pendingResume=null}}renderPlayer()};audio.ontimeupdate=()=>{renderPlayer();const n=Math.floor(audio.currentTime/5);if(n!==historyTick){historyTick=n;persist()}};audio.onerror=()=>{if(audio.src)toast('Audio missing or not supported. Try next song.',true)};
+$('#modalRoot').onclick=e=>{const add=e.target.closest('[data-addto]'),newPl=e.target.closest('[data-create-from]'),move=e.target.closest('[data-queue-move]'),play=e.target.closest('[data-queue-play]'),action=e.target.closest('[data-action]');if(add){addPlaylistTrack(add.dataset.track,add.dataset.addto);closeModal()}else if(newPl){const id=newPl.dataset.createFrom;closeModal();createPlaylist();if(state.view.startsWith('playlist:'))addPlaylistTrack(id,state.view.slice(9))}else if(move)moveQueue(Number(move.dataset.queueIndex),Number(move.dataset.queueIndex)+Number(move.dataset.queueMove));else if(play){closeModal();void playAt(Number(play.dataset.queuePlay))}else if(action){if(action.dataset.action==='add'){closeModal();choosePlaylist(action.dataset.id)}else if(action.dataset.action==='download'){const t=state.tracks.find(t=>t.id===action.dataset.id);if(t){closeModal();void fetchTrack(t).then(b=>download(b,((t.original_filename||t.title+'.sseq').replace(/\.[^.]+$/,'')+'.sseq'))).catch(e=>toast(e.message,true))}}}};
+audio.onplay=renderPlayer;audio.onpause=renderPlayer;audio.onended=()=>{if(state.repeat==='one'){audio.currentTime=0;void audio.play()}else advance(1)};audio.onloadedmetadata=()=>{if(pendingResume){const id=current()?.id;const seconds=SigmaCore.validResume(pendingResume,id,audio.duration);if(seconds!==null && audio.currentSrc.includes(encodeURIComponent(id))){audio.currentTime=seconds;pendingResume=null;}else if(id&&pendingResume.trackId!==id){pendingResume=null}}renderPlayer()};audio.ontimeupdate=()=>{renderPlayer();const n=Math.floor(audio.currentTime/5);if(n!==historyTick){historyTick=n;persist()}};audio.onerror=()=>{if(audio.src)toast('SSEQ missing or not supported. Try next song.',true)};
 window.addEventListener('pagehide',()=>{
  persist();pageActive=false;lifecycleEpoch++;state.ready=false;
  catalogAbort?.abort();configAbort?.abort();audio.pause();stopRealtime();refreshFlight=null;configFlight=null;
@@ -660,15 +628,15 @@ window.addEventListener('pageshow',e=>{
 window.addEventListener('online',()=>{if(pageActive)void refreshService({silent:true})});
 document.addEventListener('visibilitychange',()=>{if(pageActive&&!document.hidden)void loadCatalog({silent:true})});
 async function init(){
- loadPersonal();audio.volume=state.volume;audio.muted=state.muted;render();resumeValidationWatchers();
+ loadPersonal();audio.volume=state.volume;audio.muted=state.muted;audio.setSoundMode(state.normalize,state.target);render();resumeValidationWatchers();
  await refreshService({silent:true});
  if(!pageActive)return;
  if(pendingResume&&current()){
   const id=pendingResume.trackId;
-  audio.crossOrigin='anonymous';audio.src='/api/audio?id='+encodeURIComponent(id);
-  audio.preload='metadata';audio.load();
+  audio.slot=Number(current()?.sseq_id);audio.crossOrigin='anonymous';audio.src='/api/audio?id='+encodeURIComponent(id);
+  audio.preload='metadata';void audio.load().catch(()=>{});
  }
 }
 void init();
-window.SigmaDebug={state,viewTracks,art,exportDS,exportSigmaDex,openSigmaExportPicker,backup,loadCatalog,loadConfig,refreshService,sha256,uploadFiles,cancelUpload,openExportPicker,reorder,stopRealtime};
+window.SigmaDebug={state,viewTracks,art,exportSigmaDex,openSigmaExportPicker,backup,loadCatalog,loadConfig,refreshService,sha256,uploadFiles,cancelUpload,openExportPicker,reorder,stopRealtime};
 })();

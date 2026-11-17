@@ -37,7 +37,19 @@ async def main():
     await page.set_content(fixture(),wait_until='domcontentloaded',timeout=15000)
     await page.evaluate('''()=>{Object.defineProperty(window,'crypto',{configurable:true,value:{randomUUID:()=>('00000000-0000-4000-8000-'+Math.random().toString().slice(2,14).padEnd(12,'0')),subtle:{digest:async()=>new Uint8Array(32).buffer}}})}''')
     await page.evaluate('()=>{window.__originalFetch=window.fetch;'+MOCK+'}')
-    await page.evaluate('SigmaDebug.state.ready=true')
+    # Do not fake readiness: the app begins an asynchronous /api/config request
+    # while set_content() runs. Setting state.ready=true here allowed uploads
+    # to start before the real config object contained the Turnstile sitekey.
+    # That race is particularly visible on slower GitHub Actions runners.
+    # Wait for the app to ingest the *mocked* config, not just a UI flag.
+    config_result = await page.evaluate('''async()=>{
+      let ok=await SigmaDebug.loadConfig({silent:true});
+      if(!ok || __qa.configReads<1) ok=await SigmaDebug.loadConfig({silent:true});
+      return {ok,ready:SigmaDebug.state.ready,configReads:__qa.configReads};
+    }''')
+    assert (config_result['ok'] and config_result['ready']
+            and config_result['configReads']>=1), (
+      f"Test upload configuration was not loaded from mock API: {config_result}")
     # Spy on actual SSEQ builds. Submission is intercepted by mock API: no real network.
     await page.evaluate('''()=>{const original=SigmaSSEQ.build;window.__uiBuilds=[];SigmaSSEQ.build=function(o){const result=original(o);window.__uiBuilds.push(result);return result}}''')
     await page.locator('#fileInput').set_input_files(str(ROOT/'tests/fixtures/polyphony'/case[ext]))
@@ -52,6 +64,7 @@ async def main():
      try:
       diagnostic=await page.evaluate('''()=>({
         ready:SigmaDebug?.state?.ready,
+        configReads:window.__qa?.configReads ?? -1,
         busy:SigmaDebug?.state?.busy,
         starts:window.__qa?.starts?.length ?? -1,
         uploads:window.__qa?.uploads?.length ?? -1,

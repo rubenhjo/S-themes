@@ -1,6 +1,14 @@
-# Komplett sigma-themes v1.7.5 – CI-stabilisering, 17.11.2026
+# Komplett sigma-themes v1.7.5 – CI-stabilisering og Turnstile-testrettelse, 17.11.2026
 
 Dette er **hele prosjektet**, ikke en patch. Alle nødvendige nettside-, API-, test-, GitHub Actions- og Supabase-kildefiler ligger i ZIP-rotmappen. `node_modules`, miljøvariabler og `.git` følger **ikke** med.
+
+## Ny rettelse basert på GitHub Actions-logg `119311947455` (17.11.2026)
+
+- **Diagnose:** 26 av 28 CI-jobber bestod. `static-and-audio` bestod, men `browser_polyphonic_filepicker.py` i sharder 2/3 og 3/3 stoppet på MP3-opplasting. Begge skrev `Cloudflare Turnstile sitekey is missing from /api/config`. Selve toneanalysen av WAV ble korrekt.
+- **Årsak:** nettleserens app starter en asynkron konfigurasjonsforespørsel ved oppstart, mens testen tidligere satte `SigmaDebug.state.ready=true` manuelt. Dette kunne starte opplastingen før intern app-konfigurasjon hadde mottatt `turnstileSiteKey` fra den simulerte `/api/config`-tjenesten. Det er en testkappløpstilstand; loggene alene dokumenterer ikke en feil med produksjonens Cloudflare-innstillinger.
+- **Løsning:** testen venter nå på at appens `loadConfig()` faktisk har hentet den simulerte konfigurasjonen før den velger fil og starter opplasting. Mockserveren teller config-forespørsler, slik at en falsk «klar»-status ikke blir akseptert. Feildiagnostikken viser også configReads.
+- **Ingen endringer i produksjonskoden:** Turnstile-beskyttelsen, SSEQ-konverteringen, sangkatalogen og Supabase-migrasjonene er uendret.
+- **Verifisering:** `npm run verify` bestod (164/164 Node-tester), 18/18 polyfoniske browser-tilfeller bestod, alle tre sharder bestod 6/6, og lokal mock-opplasting samt arrangementskontroller bestod. Variasjonen med localhost og ekte Web Crypto kunne ikke utføres i dette låste testmiljøet (`ERR_BLOCKED_BY_ADMINISTRATOR`); dette må bekreftes i neste GitHub Actions-kjøring.
 
 ## Endringer i denne leveransen
 

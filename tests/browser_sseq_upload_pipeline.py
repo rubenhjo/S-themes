@@ -7,11 +7,11 @@ from playwright.async_api import async_playwright
 from browser_public import ROOT, fixture
 
 MOCK = r'''
-window.__qa={starts:[],finishes:[],uploads:[],catalog:[],currentId:0};
+window.__qa={starts:[],finishes:[],uploads:[],catalog:[],currentId:0,configReads:0};
 window.turnstile={render(el,opt){queueMicrotask(()=>opt.callback('t'.repeat(32)));return 'widget'},remove(){},reset(){}};
 window.fetch=async (url,opts={})=>{
  const x=String(url); const q=window.__qa;
- if(x.includes('/api/config'))return Response.json({ready:true,maxUploadBytes:65536,turnstileSiteKey:'test-site'});
+ if(x.includes('/api/config')){q.configReads++;return Response.json({ready:true,maxUploadBytes:65536,turnstileSiteKey:'test-site'});}
  if(x.includes('/api/catalog'))return Response.json({tracks:q.catalog,complete:true});
  if(x.includes('/api/upload-start')){
   const body=JSON.parse(opts.body);q.starts.push(body);

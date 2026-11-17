@@ -45,18 +45,22 @@ SUITES = [
 
 
 
-def execute_suite(script: str, timeout: int = 75) -> float:
+def execute_suite(script: str, timeout: int = 75, extra_env: dict | None = None) -> float:
     started = time.monotonic()
-    print(f'RUN {script}', flush=True)
+    label = script + (' [' + ', '.join(f'{key}={value}' for key,value in extra_env.items()) + ']' if extra_env else '')
+    print(f'RUN {label}', flush=True)
     cmd = [sys.executable, '-u', str(ROOT / script)]
     kwargs = {'start_new_session': True} if os.name == 'posix' else {
         'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP
     }
-    process = subprocess.Popen(cmd, **kwargs)
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
+    process = subprocess.Popen(cmd, env=env, **kwargs)
     try:
         code = process.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
-        raise RuntimeError(f'TIMEOUT {script} after {timeout}s; browser process tree killed')
+        raise RuntimeError(f'TIMEOUT {label} after {timeout}s; browser process tree killed')
     finally:
         # Even on a successful Python exit, Chromium descendants might remain.
         # Cleanup their isolated process group so the next suite starts cleanly.
@@ -71,16 +75,22 @@ def execute_suite(script: str, timeout: int = 75) -> float:
         if process.poll() is None:
             process.wait(timeout=10)
     if code != 0:
-        raise RuntimeError(f'FAIL {script}: exit {code}')
+        raise RuntimeError(f'FAIL {label}: exit {code}')
     elapsed = time.monotonic() - started
-    print(f'PASS {script} in {elapsed:.1f}s', flush=True)
+    print(f'PASS {label} in {elapsed:.1f}s', flush=True)
     return elapsed
 
 
 def main():
     try:
         for script in SUITES:
-            execute_suite(script)
+            if script == 'browser_five_minute_import.py':
+                # Match CI: each real 300-second codec has its own clean browser,
+                # subprocess and bounded deadline, so neither can hide the other.
+                for codec in ('wav','mp3'):
+                    execute_suite(script,timeout=150,extra_env={'SIGMA_FIVE_MINUTE_CODEC':codec})
+            else:
+                execute_suite(script)
     except (RuntimeError, OSError) as error:
         print(error, file=sys.stderr, flush=True)
         return 1

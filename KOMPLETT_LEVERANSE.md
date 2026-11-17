@@ -1,3 +1,15 @@
+# Oppdatering 17. november – femminutters WAV/MP3 i CI
+
+Denne komplette prosjektpakken bygger på forrige v1.7.5 ZIP og reparerer **den ene gjenværende feilen** dokumentert i `logs_119325362560.zip`. Av 28 GitHub Actions-jobber bestod 27; `browser_five_minute_import.py` ble stoppet av ekstern tidsgrense (`exit 124`) etter at 300 sekunders WAV allerede hadde bestått. MP3-testen startet, men fikk ikke fullføre før samme 90-sekunders budsjett gikk ut. Dette er en CI-testorkestreringsfeil, **ikke bevis på at MP3-transkripsjonen feiler**.
+
+- WAV og MP3 testes nå som **to separate CI-jobber**, hver med egen Chromium-prosess, generering og hard 150-sekunders grense. Ingen av formatene er hoppet over eller svekket: begge krever 150 korrekte noter, riktig sluttid, vellykket arrangering og én SSEQ-opplasting.
+- Lokal `npm run test:browser` kjører også WAV og MP3 som to isolerte underkjøringer og lar hver bruke opptil 150 sekunder.
+- Testen skriver ut hvor mye tid nettleseroppsettet tar, slik at nye CI-forsinkelser kan diagnostiseres.
+- Lokal verifisering etter endring: `npm run verify` **164/164**, WAV **150/150** og MP3 **150/150** fra separate Chromium-kjøringer. Dette er lokale resultater, ikke en bekreftet ny GitHub-kjøring.
+- Ingen produksjonskildekode, database-migrasjoner eller eksisterende sanger er endret av denne siste reparasjonen.
+
+---
+
 # Komplett sigma-themes v1.7.5 – CI-stabilisering og Turnstile-testrettelse, 17.11.2026
 
 Dette er **hele prosjektet**, ikke en patch. Alle nødvendige nettside-, API-, test-, GitHub Actions- og Supabase-kildefiler ligger i ZIP-rotmappen. `node_modules`, miljøvariabler og `.git` følger **ikke** med.

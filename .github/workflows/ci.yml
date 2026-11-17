@@ -59,7 +59,7 @@ jobs:
       - name: Browser-runner timeout and subprocess cleanup regression
         run: python3 tests/test_runner_timeout.py
   browser:
-    name: Browser ${{ matrix.suite }} ${{ matrix.poly_shard || '' }}
+    name: Browser ${{ matrix.suite }} ${{ matrix.poly_shard || matrix.five_codec || '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -88,7 +88,6 @@ jobs:
           - browser_song_deletion.py
           - browser_song_arranger.py
           - browser_arranger_controls.py
-          - browser_five_minute_import.py
         include:
           # All 18 cases still run; each job starts in a clean Chromium process.
           - suite: browser_polyphonic_filepicker.py
@@ -97,6 +96,12 @@ jobs:
             poly_shard: '2/3'
           - suite: browser_polyphonic_filepicker.py
             poly_shard: '3/3'
+          # WAV and MP3 each must complete the entire 300-second round trip.
+          # Separate runners prevent the first codec consuming the second's time budget.
+          - suite: browser_five_minute_import.py
+            five_codec: wav
+          - suite: browser_five_minute_import.py
+            five_codec: mp3
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -125,4 +130,14 @@ jobs:
         env:
           SIGMA_BROWSER_USE_REAL_CRYPTO: '1'
           POLY_SHARD: ${{ matrix.poly_shard || '' }}
-        run: timeout 90s python -u tests/${{ matrix.suite }}
+          SIGMA_FIVE_MINUTE_CODEC: ${{ matrix.five_codec || '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$SIGMA_FIVE_MINUTE_CODEC" ]]; then
+            # Real five-minute decoding/transcription is heavier on shared CI CPU.
+            # Each codec still has a hard 150-second end-to-end limit and full assertions.
+            timeout --signal=TERM --kill-after=10s 150s python -u tests/${{ matrix.suite }}
+          else
+            timeout --signal=TERM --kill-after=10s 90s python -u tests/${{ matrix.suite }}
+          fi

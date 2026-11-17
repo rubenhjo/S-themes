@@ -11,6 +11,7 @@ import tempfile
 import wave
 from pathlib import Path
 import math
+import time
 from array import array
 from playwright.async_api import async_playwright
 from browser_song_arranger import page_setup
@@ -57,7 +58,10 @@ def create_fixture(folder: Path):
 
 
 async def run_file(browser,source):
+    started=time.monotonic()
+    print('Preparing page for long '+source.suffix,flush=True)
     page,errors=await page_setup(browser)
+    print('Page prepared in %.2fs for %s'%(time.monotonic()-started,source.suffix),flush=True)
     await page.evaluate('''(workerSource)=>{
       const RealWorker=window.Worker;
       const url=URL.createObjectURL(new Blob([workerSource],{type:'text/javascript'}));
@@ -133,11 +137,19 @@ async def main():
         print('Generating 300-second WAV and MP3 sources',flush=True)
         files=create_fixture(Path(d))
         print('Sources ready',[(str(x),x.stat().st_size) for x in files],flush=True)
+        # The two real 300-second imports each have to pass independently in CI.
+        # An empty selection preserves the original both-formats local test.
+        requested=os.environ.get('SIGMA_FIVE_MINUTE_CODEC','').strip().lower()
+        if requested not in ('','wav','mp3'):
+            raise ValueError('SIGMA_FIVE_MINUTE_CODEC must be wav, mp3, or empty')
+        selected=[f for f in files if not requested or f.suffix=='.'+requested]
+        assert len(selected)==(1 if requested else 2),(requested,selected)
+        print('Five-minute format selection:',requested or 'wav+mp3',flush=True)
         async with async_playwright() as p:
             browser=await p.chromium.launch(executable_path='/usr/bin/chromium' if os.path.exists('/usr/bin/chromium') else None,
                                             args=['--no-sandbox'])
             try:
-                for source in files:await run_file(browser,source)
+                for source in selected:await run_file(browser,source)
             finally:
                 await browser.close()
 

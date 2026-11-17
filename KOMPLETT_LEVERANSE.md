@@ -1,0 +1,35 @@
+# Komplett sigma-themes v1.7.5 – CI-stabilisering, 17.11.2026
+
+Dette er **hele prosjektet**, ikke en patch. Alle nødvendige nettside-, API-, test-, GitHub Actions- og Supabase-kildefiler ligger i ZIP-rotmappen. `node_modules`, miljøvariabler og `.git` følger **ikke** med.
+
+## Endringer i denne leveransen
+
+- Inkluderer rettelsene fra begge tidligere QA-reparasjoner: generering av WAV/MP3 i CI, servering av `sigma_note_refine.js` i nettlesertesten, sikre migrasjonstester og `POLY_FAILURE`-diagnostikk.
+- `npm test` lager nå eventuelle manglende **syntetiske** WAV/MP3-testfiler selv. Krever FFmpeg med libmp3lame ved manglende filer. Dermed fungerer også `npm run verify` fra et rent, nyutpakket prosjekt med FFmpeg installert.
+- Polyfonitesten kjøres i tre isolerte GitHub Actions-jobber med til sammen alle 18 WAV/MP3-tilfellene. Ingen krav om noter, akkorder, eksport eller feilrapportering er fjernet.
+- GitHub Actions `checkout`, `setup-node` og `setup-python` er oppgradert til v6 (Node 24) for å fjerne de tidligere Node 20-advarslene. Disse workflow-endringene må bekreftes av neste GitHub-kjøring.
+- Ingen SQL er endret eller slettet. De seks historiske SQL-migrasjonene ligger fortsatt i `supabase/migrations` og har byte-identiske kopier i `docs/legacy_migrations`.
+
+## Lokal installasjon / opplasting til GitHub
+
+1. Pakk ut ZIP-filen. **Marker alt innholdet inne i ZIP-mappen**, og kopier inn i roten av din eksisterende lokale `S-themes`-mappe (samme mappe som `package.json`). Velg å erstatte eksisterende prosjektfiler. Kopier ikke en ZIP-fil som én fil til GitHub – GitHub pakker den ikke ut.
+2. **Ikke slett** eksisterende `.git`-mappe, egne lokale filer, `.env` eller andre konfigurasjoner. Denne pakken inneholder ingen `.git` eller hemmelige nøkler.
+3. I PowerShell fra prosjektroten:
+   ```powershell
+   git status
+   npm ci
+   npm run verify
+   git add -A
+   git commit -m "Complete sigma-themes v1.7.5 QA stability fixes"
+   git push origin main
+   ```
+4. Kontroller GitHub Actions. En bestått lokal test beviser ikke at alle CI-jobber eller produksjonsintegrasjoner fungerer.
+
+Før du kopierer: behold en lokal sikkerhetskopi hvis du har nye endringer på PC-en etter commit `6b3a3ae`. Hvis du har endret `main` etter dette, kan en komplett kildekodepakke overskrive nyere arbeid; sjekk `git status` og sammenlign endringer før du erstatter.
+
+## Faktisk verifikasjon / begrensninger
+
+- **BESTÅTT lokalt:** `npm run verify` (164/164 Node-tester), `npm run test:browser` (25/25 Chromium-suiter), tre polyfoni-sharder (6/6 hver), SSEQ-parser og migrasjonssikkerhet. Dette inkluderer test fra ren mappe med de genererte WAV/MP3-filene slettet.
+- **Ikke ennå kjørt på GitHub:** CI-shardene og de oppdaterte `actions/*@v6` må bekreftes etter `git push`.
+- **Ikke produksjonsverifisert:** ekte Supabase-upload, migrasjon av produksjonsdata, Vercel/Turnstile, fysisk iPhone, original HeartGold og Sigma Dex. Ikke kjør SQL ukritisk i produksjon.
+- **Fortsatt åpne**: generell automatisk musikktranskripsjon av kompleks polyfoni, ekte 5-minutters kommersielle musikkopptak, nøyaktig DS-syntese og andre punkter i `KNOWN_ISSUES.md`. Denne leveransen hevder ikke at alle 72 registrerte forholdene er lukket.

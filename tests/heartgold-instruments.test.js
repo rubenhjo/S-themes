@@ -52,3 +52,25 @@ test('ADPCM decoder does not overrun and produces bounded samples',()=>{
  const w=src.decodeWave(b,0,b.length);assert.equal(w.samples.length,17);
  assert.ok([...w.samples].every(s=>s<=1&&s>=-1));
 });
+
+test('Sound-first catalogue groups instruments without inventing General MIDI names',()=>{
+ const groups=lib.SOUND_FAMILIES;
+ for(const family of ['keys','guitar','bass','strings','brass','winds','voice','synth','drums','fx','other'])assert.ok(groups.some(f=>f.id===family),family);
+ const synth=groups.find(f=>f.id==='synth');assert.ok(synth.sub.length>=8);
+ for(const section of ['synth-lead','synth-soft','synth-pad','synth-dark','synth-pluck','synth-retro','synth-digital','synth-bass'])assert.ok(synth.sub.some(s=>s[0]===section));
+ assert.equal(lib.soundTagFor(701,profiles.banks['701'].programs[0]).id,'synth-retro');
+ assert.equal(lib.soundTagFor(702,profiles.banks['702'].programs[0]).id,'other-unknown');
+ assert.equal(lib.nameBasedSoundTag('Warm Synth Lead'),'synth-soft');
+ assert.equal(lib.nameBasedSoundTag('Electric Piano 2'),'keys-electric');
+ assert.equal(lib.nameBasedSoundTag('Distortion Guitar'),'guitar-drive');
+ assert.equal(lib.nameBasedSoundTag('Silver City Battle Bank'),null);
+});
+test('Explicit personal instrument category overrides inferred tags and is persistent',()=>{
+ const saved=new Map();context.localStorage={getItem:(k)=>saved.get(k)??null,setItem:(k,v)=>saved.set(k,v)};
+ lib.storeSoundTag(702,0,'keys-piano');
+ assert.equal(lib.soundTagFor(702,profiles.banks['702'].programs[0]).id,'keys-piano');
+ assert.equal(lib.soundTagFor(702,profiles.banks['702'].programs[0]).source,'custom');
+ assert.equal(lib.readSoundTags()['702:0'],'keys-piano');
+ lib.storeSoundTag(702,0,'');
+ assert.equal(lib.soundTagFor(702,profiles.banks['702'].programs[0]).id,'other-unknown');
+});

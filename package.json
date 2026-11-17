@@ -1,6 +1,6 @@
 {
   "name": "sigma-themes",
-  "version": "1.7.5-five-minute-qa-rc1",
+  "version": "1.7.6-sound-first-rc1",
   "private": true,
   "type": "module",
   "description": "Account-free SSEQ-only shared music library; experimental browser audio transcription",

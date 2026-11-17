@@ -790,7 +790,7 @@ function checkMidiProgramRanges(context,models,files,programs,trackPrograms){
 
 function openHeartGoldLibraryDialog(){
  const profiles=window.SigmaBankProfiles,L=window.SigmaInstrumentLibrary;
- modal(`<h2>HeartGold · all 39 sound banks</h2><p class="hint">Browse every extracted bank and hear short approximate tones. Choosing a program sets the default for new single-file uploads. The exported SSEQ must use the destination slot's actual bank.</p><div id="standaloneInstrumentBrowser"></div><p class="hint" id="selectedHGStatus">Select a program or continue browsing.</p>`);
+ modal(`<h2>Find an instrument by sound</h2><p class="hint">Browse piano, guitars, synths and more across all 39 HeartGold banks. Some sampled patches need manual identification; no guessed General MIDI names. Choosing a program also sets the destination game bank for single-file uploads. The exported SSEQ must use the destination slot's actual bank.</p><div id="standaloneInstrumentBrowser"></div><p class="hint" id="selectedHGStatus">Select a program or continue browsing.</p>`);
  const ref=L.mount($('#standaloneInstrumentBrowser'),{profiles,bankId:window.SigmaSSEQ.profileSlot(profiles,Number($('#hgSlot').value)).bankId,
  selected:()=>Number($('#hgProgram').value),
  onBank:(bank,slots)=>{if(slots.length){$('#hgSlot').value=String(slots[0]);$('#hgSlot').dispatchEvent(new Event('change'))}},
@@ -834,7 +834,7 @@ async function openMidiArrangementDialog(files){
     }).join('')}
    </details></section>`;
  }).join('')}</div>
- <details class="hg-arrangement-library" open><summary><strong>Browse all 39 HeartGold banks · preview and choose instruments</strong></summary><label for="hgFileTarget">Choose a MIDI file to assign the selected instrument to</label><select id="hgFileTarget">${arr.map((file,i)=>`<option value="${i}">${i+1}. ${escapeHTML(file.name)}</option>`).join('')}</select><div id="arrangementInstrumentBrowser"></div></details>
+ <details class="hg-arrangement-library" open><summary><strong>Find instruments by sound · preview and choose</strong></summary><label for="hgFileTarget">Choose a MIDI file to assign the selected instrument to</label><select id="hgFileTarget">${arr.map((file,i)=>`<option value="${i}">${i+1}. ${escapeHTML(file.name)}</option>`).join('')}</select><div id="arrangementInstrumentBrowser"></div></details>
  <p id="midiArrangeStatus" class="hint" role="status">Choose from every program in the selected bank, independently for each of up to five MIDI files (and optionally each track). SSEQ supports up to 16 simultaneous instrument tracks. Browser preview is synthesized, not original HeartGold samples.</p>
  <div class="midi-arrange-actions"><button class="btn" id="previewCombinedMidi" type="button">▶ Preview combined SSEQ</button>
  <button class="btn primary" id="uploadCombinedMidi" type="button">Upload one combined song</button></div></div>`);
@@ -940,7 +940,7 @@ function openUploadMusicDialog(){
   <select id="uploadTargetSlot" aria-label="Game music slot"></select>
   <label for="uploadTargetProgram">Instrument for single-file conversion</label>
   <div class="hg-select-inline"><select id="uploadTargetProgram"></select><button type="button" class="btn small" id="previewUploadProgram">▶ Hear</button></div>
-  <details class="hg-upload-browser"><summary>Explore every instrument · preview before selecting</summary><div id="uploadInstrumentBrowser"></div></details>
+  <details class="hg-upload-browser" open><summary>Explore by sound · piano, guitars, synths, drums</summary><div id="uploadInstrumentBrowser"></div></details>
   <label for="uploadAudioMode">Arranger sangen · forslag</label><select id="uploadAudioMode"><option value="auto">Auto (anbefalt)</option><option value="melody">Kun melodi</option><option value="melody-chords">Melodi med akkompagnement</option></select><p class="hint">Etter at du velger én WAV, MP3 eller støttet lydfil, får du et redigerbart forslag som kan godtas med ett trykk.</p>
   <div class="midi-mode-switch" role="group" aria-label="Upload mode">
    <label><input type="radio" name="uploadMusicMode" value="separate" checked> Separate songs</label>

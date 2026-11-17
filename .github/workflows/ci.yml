@@ -72,6 +72,7 @@ jobs:
           - browser_midi_five.py
           - browser_catalog_integrity.py
           - browser_hg39_catalog.py
+          - browser_sound_categories.py
           - browser_all_instruments.py
           - browser_multi_midi.py
           - browser_sprite_visibility.py

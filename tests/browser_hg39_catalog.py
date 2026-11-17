@@ -21,6 +21,7 @@ async def main():
   await page.locator('#browseHeartGoldBanks').click()
   banks=await page.locator('#standaloneInstrumentBrowser [data-hg-bank] option').count()
   assert banks==39,banks
+  await page.locator('#standaloneInstrumentBrowser [data-hg-view="bank"]').click()
   await page.locator('#standaloneInstrumentBrowser [data-hg-bank]').select_option('701')
   assert await page.locator('#standaloneInstrumentBrowser [data-hg-list] article').count()==128
   assert await page.locator('#standaloneInstrumentBrowser [data-hg-bank-details]').inner_text()!=''
@@ -54,6 +55,7 @@ async def main():
    await (await chooser.value).set_files(paths)
    await page.locator('#combinedTitle').wait_for(timeout=10000)
    assert await page.locator('#arrangementInstrumentBrowser [data-hg-bank] option').count()==39
+   await page.locator('#arrangementInstrumentBrowser [data-hg-view="bank"]').click()
    await page.locator('#arrangementInstrumentBrowser [data-hg-bank]').select_option('702')
    assert await page.locator('#arrangedBank').inner_text()=='702'
    assert await page.locator('#arrangementInstrumentBrowser [data-hg-list] article').count()==68

@@ -32,6 +32,7 @@ SUITES = [
     'browser_midi_five.py',
     'browser_all_instruments.py',
     'browser_hg39_catalog.py',
+    'browser_sound_categories.py',
     'browser_multi_midi.py',
     'browser_exports.py',
     'browser_qc5.py',

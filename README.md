@@ -150,3 +150,8 @@ The previously exposed HeartGold music-slot/instrument panel is no longer on the
 ## Delete a shared song (v1.7.1)
 
 Choose a song's **•••** menu → **Delete song from shared library**. The uploader can delete songs uploaded from their browser using the saved private upload receipt; the site administrator can delete older or other tracks with a separately configured `SONG_DELETE_ADMIN_TOKEN`. This is different from deleting a local playlist. The server hides the song with a database tombstone, removes its SSEQ using the Storage API, and retries failed Storage cleanup via the protected cron. **The SQL migration and the admin environment variable are required before this feature will work in production.** See [`SONG_DELETION.md`](SONG_DELETION.md) and [`RELEASE_QC_V1_7_1.md`](RELEASE_QC_V1_7_1.md).
+
+
+### Sound-first HeartGold instrument navigation (v1.7.6)
+
+Use **Explore instruments by sound** to browse sound families across all 39 game banks, including eight synthesizer-character categories. Per-instrument sound tags can be applied by ear and are browser-local. Sample timbres are **not** inferred from unknown program IDs. See [SOUND_FIRST_INSTRUMENTS.md](SOUND_FIRST_INSTRUMENTS.md) for limitations and testing.

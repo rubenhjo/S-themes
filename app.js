@@ -9,7 +9,9 @@ const fmt=s=>Number.isFinite(Number(s))?`${Math.floor(s/60)}:${String(Math.floor
 const audio=new window.SigmaSeqAudio();
 const state={tracks:[],playlists:[],items:[],likes:[],view:'all',queue:[],baseQueue:[],index:-1,playingId:null,shuffle:false,repeat:'off',volume:.8,muted:false,normalize:true,target:-14,sort:'added',search:'',busy:false,ready:false,connected:false,catalogChecked:false,activeProgress:null,dsMappings:{},folderTree:[],trackFolders:{},exportMetadata:{}};
 let pageActive=true,lifecycleEpoch=0,configFlight=null,connectGeneration=0,catalogAbort=null,configAbort=null;
-let config={},playToken=0,blobURL=null,ctx=null,gain=null,uiToastTimer=null,refreshFlight=null,realtimeSocket=null,heartbeat=null,reconnectTimer=null,refreshTimer=null,refreshDelay=null,drag=null,queueDrag=null,activeUpload=null,uploadOp=null,exportOp=null,pendingResume=null,historyTick=0,archiveUrls=[];
+let uploadAudioMode='auto';
+let activeArrangeUi=null,arrangeController=null;
+let config={},playToken=0,blobURL=null,ctx=null,gain=null,uiToastTimer=null,refreshFlight=null,realtimeSocket=null,heartbeat=null,reconnectTimer=null,refreshTimer=null,refreshDelay=null,drag=null,queueDrag=null,activeUpload=null,uploadOp=null,exportOp=null,pendingResume=null,historyTick=0,archiveUrls=[],uploadChoiceMode="separate",midiPreview=null,midiPreviewUrl=null;
 function toast(message,bad=false){let root=$('#toastRoot');root.innerHTML=`<div class="toast" role="status" style="background:${bad?'#a43f5c':'#534779'}">${escapeHTML(message)}</div>`;clearTimeout(uiToastTimer);uiToastTimer=setTimeout(()=>root.replaceChildren(),5500)}
 function persist(){
  try{
@@ -40,6 +42,59 @@ function loadPersonal(){
   const session=s.session&&typeof s.session==='object'?s.session:{trackId:s.playingId,seconds:Number(s.lastTime)||0,savedAt:0,context:s.view,queue:s.queue};
   pendingResume=session.trackId&&session.trackId===state.playingId&&state.queue.includes(session.trackId)?session:null;
  }catch(e){console.warn('Browser personal storage is unavailable',e);toast('Personal storage is unavailable. Export backups regularly.',true)}
+}
+// Scoped deletion capabilities belong to the browser which uploaded each track.
+// They are never submitted to the public catalog, backed up with playlists,
+// placed in a URL, or shared with other visitors.
+const ownerReceiptsKey='sigma-themes-song-owner-receipts-v1';
+function readOwnerReceipts(){
+ try{const obj=JSON.parse(localStorage.getItem(ownerReceiptsKey)||'{}');return obj&&typeof obj==='object'&&!Array.isArray(obj)?obj:{}}
+ catch{return {}}
+}
+function ownerReceiptFor(id){const v=readOwnerReceipts()[id];return typeof v==='string'&&/^[a-f0-9]{64}$/.test(v)?v:null}
+function saveOwnerReceipt(id,receipt){
+ if(!/^[a-f0-9-]{36}$/i.test(String(id||''))||!/^[a-f0-9]{64}$/i.test(String(receipt||'')))return false;
+ try{const own=readOwnerReceipts();own[id]=receipt;localStorage.setItem(ownerReceiptsKey,JSON.stringify(own));return true}
+ catch{toast('Your browser cannot save your song deletion receipt. Keep the upload receipt safely if you may need to delete it later.',true);return false}
+}
+function removeOwnerReceipt(id){try{const own=readOwnerReceipts();delete own[id];localStorage.setItem(ownerReceiptsKey,JSON.stringify(own))}catch{}}
+function purgeDeletedSongLocally(id){
+ if(state.playingId===id)stop();
+ state.tracks=state.tracks.filter(t=>t.id!==id);
+ state.queue=state.queue.filter(x=>x!==id);state.baseQueue=state.baseQueue.filter(x=>x!==id);
+ state.items=state.items.filter(x=>x.track_id!==id);state.likes=state.likes.filter(x=>x.track_id!==id);
+ delete state.trackFolders[id];delete state.exportMetadata[id];delete state.dsMappings[id];
+ state.index=state.playingId?state.queue.indexOf(state.playingId):-1;
+ removeOwnerReceipt(id);persist();render();
+}
+function showDeleteSongDialog(id){
+ const track=state.tracks.find(t=>t.id===id);if(!track)return;
+ const hasOwn=!!ownerReceiptFor(id);
+ modal(`<h2>Delete song from shared library</h2>
+ <p><strong>${escapeHTML(track.title)}</strong> · ${escapeHTML(track.artist)}</p>
+ <p class="hint">Permanently remove this song from the public catalog and delete its stored SSEQ. This does not remove other songs with the same audio bytes. Other people's personal playlists may retain an unavailable reference.</p>
+ <label for="deleteSongMethod">How are you authorized?</label>
+ <select id="deleteSongMethod">${hasOwn?'<option value="owner">I uploaded this song in this browser</option>':''}<option value="receipt">I have the upload deletion receipt</option><option value="admin">I am the site administrator</option></select>
+ <div id="deleteSongSecretBlock"><label for="deleteSongSecret">Deletion receipt or administrator key</label><input id="deleteSongSecret" type="password" autocomplete="off" spellcheck="false" maxlength="64" placeholder="64 hexadecimal characters"></div>
+ <label for="deleteSongConfirm">Type DELETE to confirm</label><input id="deleteSongConfirm" autocomplete="off" spellcheck="false" placeholder="DELETE" maxlength="6">
+ <p class="hint" id="deleteSongStatus" role="status">This action cannot be undone.</p>
+ <button class="btn" id="confirmDeleteSong" type="button" disabled>Delete song permanently</button>`);
+ const method=$('#deleteSongMethod'),secret=$('#deleteSongSecret'),secretBlock=$('#deleteSongSecretBlock'),typed=$('#deleteSongConfirm'),button=$('#confirmDeleteSong'),status=$('#deleteSongStatus');
+ const update=()=>{secretBlock.classList.toggle('hide',method.value==='owner');button.disabled=typed.value!=='DELETE'||(method.value!=='owner'&&!/^[a-f0-9]{64}$/i.test(secret.value))};
+ method.addEventListener('change',update);typed.addEventListener('input',update);secret.addEventListener('input',update);update();
+ button.onclick=async()=>{
+  if(button.disabled)return;button.disabled=true;status.textContent='Deleting from the shared catalog…';
+  const chosen=method.value;
+  const credential=chosen==='owner'?ownerReceiptFor(id):secret.value.trim();
+  if(!credential){status.textContent='No valid deletion credential was found.';return}
+  const body={trackId:id};if(chosen==='admin')body.adminToken=credential;else body.receipt=credential;
+  try{
+   const result=await getJSON('/api/song-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+   secret.value='';closeModal();purgeDeletedSongLocally(id);
+   toast(result.cleanupPending?'Song removed from catalog. Secure storage cleanup is queued.':'Song deleted from public catalog and storage.');
+   void loadCatalog({silent:true});
+  }catch(e){secret.value='';status.textContent='Deletion failed: '+e.message;typed.value='';update()}
+ };
 }
 function resumeValidationWatchers(){
  try{
@@ -161,9 +216,12 @@ async function playAt(index,{restore=false}={}){
  if(!restore)pendingResume=null;
  state.index=index;state.playingId=id;persist();renderPlayer();
  try{
-  audio.slot=Number(t.sseq_id);audio.crossOrigin='anonymous';audio.src='/api/audio?id='+encodeURIComponent(id);await audio.load();
-  await enableAudio();if(token!==playToken)return;
-  await audio.play();
+  audio.slot=Number(t.sseq_id);audio.crossOrigin='anonymous';audio.src='/api/audio?id='+encodeURIComponent(id);
+  audio.setSoundMode(state.normalize,state.target);
+  audio.primeFromGesture(); // Must happen BEFORE the SSEQ request yields on iOS.
+  await audio.load();
+  if(token!==playToken)return;
+  await audio.play({primed:true});
  }catch(e){if(token===playToken)toast('Audio could not be played: '+e.message,true)}
  if(token===playToken)renderPlayer();
 }
@@ -216,7 +274,7 @@ function manageFolder(id){
  $('#removeFolderEdit').onclick=()=>{if(!confirm('Delete this folder? Contents and subfolders will move to its parent.'))return;const parent=folder.parent_id;state.folderTree=state.folderTree.filter(f=>f.id!==id).map(f=>f.parent_id===id?{...f,parent_id:parent}:f);for(const t of Object.keys(state.trackFolders))if(state.trackFolders[t]===id)state.trackFolders[t]=parent;persist();closeModal();openView('folder:'+parent)};
 }
 function modal(content){closeModal();$('#modalRoot').innerHTML=`<div class="overlay" id="modal"><div class="dialog" role="dialog" aria-modal="true">${content}<div class="actions"><button class="btn" id="closeDialog">Close</button></div></div></div>`;$('#closeDialog').onclick=closeModal;$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()})}
-function closeModal(){for(const url of archiveUrls)URL.revokeObjectURL(url);archiveUrls=[];$('#modalRoot').replaceChildren()}
+function closeModal(){activeArrangeUi?.destroy();activeArrangeUi=null;arrangeController?.abort();arrangeController=null;window.SigmaInstrumentLibrary?.stopPreview();if(midiPreview){midiPreview.dispose();midiPreview=null}if(midiPreviewUrl){URL.revokeObjectURL(midiPreviewUrl);midiPreviewUrl=null}for(const url of archiveUrls)URL.revokeObjectURL(url);archiveUrls=[];$('#modalRoot').replaceChildren()}
 function choosePlaylist(id){modal(`<h2>Add to playlist</h2><p class="hint">Playlists are private to your browser.</p>${state.playlists.map(p=>`<button class="btn" data-addto="${escapeHTML(p.id)}" data-track="${escapeHTML(id)}" style="display:flex;width:100%;margin-top:8px">♫ ${escapeHTML(p.name)}</button>`).join('')||'<p>No playlists yet.</p>'}<button class="btn" data-create-from="${escapeHTML(id)}" style="margin-top:12px">＋ New playlist</button>`)}
 function songOptions(id){const t=state.tracks.find(t=>t.id===id);if(!t)return;
  const map=state.exportMetadata[id]||state.dsMappings[id]||{},folders=[...SigmaDexExport.folderIndex(state.folderTree).values()].sort((a,b)=>a.path.localeCompare(b.path));
@@ -233,7 +291,10 @@ function songOptions(id){const t=state.tracks.find(t=>t.id===id);if(!t)return;
  <label>Loop end (seconds)</label><input id="loopEndInput" type="number" min="0" step="0.01" value="${loopEnd}">
  <button class="btn" id="previewStoredSseq">▶ Preview stored SSEQ in player</button>
  <p class="hint">The SSEQ loop is encoded in the published sequence. Local loop-editor metadata does not rewrite stored SSEQ bytes; changing a SSEQ loop requires a new converted revision.</p>
- <button class="btn primary" id="saveMapping">Save song settings</button></div>`);
+ <button class="btn primary" id="saveMapping">Save song settings</button></div>
+ <div class="folder-editor"><button class="btn" type="button" id="deleteSharedSong">Delete song from shared library</button>${ownerReceiptFor(id)?'<button class="btn small" type="button" id="copySongReceipt">Copy my deletion receipt</button>':''}<p class="hint">Deleting requires the uploader receipt or the site administrator key. Deleting a personal playlist is a separate action.</p></div>`);
+ $('#deleteSharedSong').onclick=()=>showDeleteSongDialog(id);
+ if($('#copySongReceipt'))$('#copySongReceipt').onclick=async()=>{try{await navigator.clipboard.writeText(ownerReceiptFor(id));toast('Private deletion receipt copied. Store it securely.')}catch{toast('Clipboard unavailable; use this browser to delete the song.',true)}};
  const preview={pause(){}};$('#previewStoredSseq').onclick=()=>{closeModal();setQueue([id],false);void playAt(0)};
  $('#saveMapping').onclick=()=>{const title=$('#editExportTitle').value.trim(),artist=$('#editExportArtist').value.trim();
  const raw=$('#sseqInput').value,idValue=raw===''?null:Number(raw),enabled=$('#loopInput').checked;
@@ -412,27 +473,69 @@ async function cancelRemote(reservation){
 function cancelUpload(){
  const op=uploadOp||exportOp;if(!op || op.canceled)return;
  op.cancel();
- const hash=op.hash;if(hash){sessionRemove('sigma-upload-'+hash);if(op.reservation?.uploadId)sessionRemove(sessionKey(hash,op.reservation.uploadId))}
+ const hash=op.hash;if(hash){if(op.key)sessionRemove(op.key);if(op.reservation?.uploadId)sessionRemove(sessionKey(hash,op.reservation.uploadId))}
  setProgress('Upload canceled by user',0);
  if(op.reservation){const reservation=op.reservation;op.reservation=null;void cancelRemote(reservation)}
 }
-async function uploadFiles(files){
+async function reviewSseqConversion(converted,slot,signal){
+ const sources=[['Final SSEQ',converted.bytes]];
+ if(converted.parts?.melody)sources.push(['Melody only',converted.parts.melody]);
+ if(converted.parts?.accompaniment)sources.push(['Accompaniment only',converted.parts.accompaniment]);
+ const preview=new window.SigmaSeqAudio();preview.slot=slot;
+ const urls=sources.map(([name,bytes])=>[name,URL.createObjectURL(new Blob([bytes],{type:'application/octet-stream'}))]);
+ let settled=false,resolveResult;
+ const result=new Promise(resolve=>resolveResult=resolve);
+ const end=accepted=>{if(settled)return;settled=true;signal?.removeEventListener('abort',cancel);
+  preview.dispose();urls.forEach(([,url])=>URL.revokeObjectURL(url));closeModal();resolveResult(accepted)};
+ const cancel=()=>end(false);
+ if(signal?.aborted){end(false);return false}
+ signal?.addEventListener('abort',cancel,{once:true});
+ modal(`<h2>Listen to your converted SSEQ</h2>
+ <p class="hint">${converted.parsed.notes.length} notes · ${converted.bytes.length} bytes. Only the validated SSEQ will be uploaded. ${window.SigmaHeartGoldSources?.loaded()?.banks?.length&&window.SigmaHeartGoldSources?.loaded()?.archives?.length?'Original imported samples are used when the selected program has a matching sample; other notes use an approximate synth.':'Browser playback uses approximate synth sounds until matching original SBNK/SWAR files are imported locally.'}</p>
+ <div style="display:flex;flex-wrap:wrap;gap:8px">${urls.map(([name],i)=>`<button type="button" class="btn" data-sseq-preview="${i}">▶ ${escapeHTML(name)}</button>`).join('')}
+ <button type="button" class="btn" id="stopSseqPreview">■ Stop</button></div>
+ <p class="hint" id="sseqReviewStatus">Listen before publishing, or continue without preview.</p>
+ <button type="button" class="btn primary" id="confirmSseqUpload">Upload validated SSEQ</button>`);
+ $('#confirmSseqUpload').onclick=()=>end(true);
+ $('#stopSseqPreview').onclick=()=>preview.pause();
+ $$('[data-sseq-preview]').forEach(button=>button.onclick=()=>{
+  const i=Number(button.dataset.sseqPreview);
+  preview.src=urls[i][1];
+  // AudioContext must be unlocked synchronously, inside this click gesture.
+  preview.primeFromGesture();
+  void preview.play({primed:true}).then(()=>{
+   const status=$('#sseqReviewStatus');if(status)status.textContent='Playing '+urls[i][0]+' from SSEQ notes';
+  }).catch(e=>toast('SSEQ preview: '+e.message,true));
+ });
+ $('#closeDialog').addEventListener('click',cancel);
+ $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')cancel()});
+ return result;
+}
+async function uploadFiles(files,options={}){
  if(state.busy)return;if(!state.ready)return toast('Upload server is not configured',true);
  const arr=[...files];if(!arr.length)return;
  state.busy=true;$('#uploadBtn').disabled=true;
  const op=SigmaCore.operation();uploadOp=op;let done=0,errors=[];
- try{for(const sourceFile of arr){
+ try{for(const input of arr){
+  const combined=input?.combinedMidi===true;
+  const sourceFile=combined?new File([],String(input.title||'Combined MIDI').trim()+'.mid',{type:'audio/midi'}):input;
   let file=sourceFile;
   if(op.canceled)break;
   window.dispatchEvent(new CustomEvent('sigma:upload-source',{detail:{bytes:sourceFile.size,extension:String(sourceFile.name.split('.').pop()||'').toLowerCase()}}));
-  let hash=null;
+  let hash=null,uploadKey=null;
   try{
-   const slot=Number($('#hgSlot').value),program=Number($('#hgProgram').value);
+   const slot=Number(options.slot??$('#hgSlot').value),program=options.program??($('#hgProgram').value==='auto'?null:Number($('#hgProgram').value));
    setProgress('Converting '+sourceFile.name+' into HeartGold SSEQ',1);
-   const converted=await window.SigmaTranscribe.convertFile(sourceFile,{
-     slot,program,loop:$('#hgLoop').checked,profiles:window.SigmaBankProfiles,signal:op.signal,
-     onProgress:(label,part)=>setProgress(label,3+Math.round(45*part),{fraction:label==='Transcribing melody and timing'?Math.min(1,Math.max(0,(part-.15)/.74)):null})
-   });
+   const conversionOpts={slot,program,loop:options.loop??$('#hgLoop').checked,profiles:window.SigmaBankProfiles,signal:op.signal,
+     audioMode:options.audioMode||'melody-chords',
+     onProgress:(label,part)=>setProgress(label,3+Math.round(45*part),{fraction:label==='Transcribing melody and timing'?Math.min(1,Math.max(0,(part-.15)/.74)):null})};
+   const converted=options.preconverted && arr.length===1 ? options.preconverted : combined
+     ?await window.SigmaTranscribe.combineMidiFiles(input.files,{...conversionOpts,programPerFile:input.programs,trackOverrides:input.trackOverrides||{},fileSettings:input.fileSettings||[]})
+     :await window.SigmaTranscribe.convertFile(sourceFile,conversionOpts);
+   op.check();
+   if(options.review && !(await reviewSseqConversion(converted,slot,op.signal))){
+    toast('Conversion preview closed; nothing was uploaded');continue;
+   }
    op.check();
    file=new File([converted.bytes],sourceFile.name.replace(/\.[^.]+$/,'')+'.sseq',{type:'application/octet-stream'});
    if(file.size<30||file.size>config.maxUploadBytes)throw Error('SSEQ exceeds the 64 KiB sequence budget');
@@ -440,12 +543,12 @@ async function uploadFiles(files){
    const bytes=new Uint8Array(await file.slice(0,32).arrayBuffer());op.check();
    if(!matchesMagic(bytes,ext))throw Error('SSEQ header does not match extension');
    setProgress('Calculating SHA-256',1);hash=await sha256(file);op.hash=hash;op.check();
-   if(state.tracks.some(t=>t.sha256===hash)){toast(file.name+': already uploaded');continue}
    const metadata=await audioMetadata(sourceFile);op.check();
    metadata.slot=slot;metadata.duration=converted.parsed.durationTicks*60/(converted.parsed.tempo*48);
-   metadata.title=metadata.title||sourceFile.name.replace(/\.[^.]+$/,'');
+   metadata.title=combined?input.title:(metadata.title||sourceFile.name.replace(/\.[^.]+$/,''));
+   uploadKey='sigma-upload-'+hash+'-'+slot+'-'+encodeURIComponent(metadata.title);op.key=uploadKey;
    let reservation, resumedReservation=false;
-   const persisted=sessionGet('sigma-upload-'+hash);
+   const persisted=sessionGet(uploadKey);
    if(persisted){
     try{
      const candidate=JSON.parse(persisted);
@@ -456,7 +559,7 @@ async function uploadFiles(files){
       op.check();
       if(status.status==='pending'){reservation=candidate;resumedReservation=true;}
       else if(status.status==='validating'||status.status==='processing'){
-       sessionRemove('sigma-upload-'+hash);toast(file.name+': awaiting server validation');continue;
+       sessionRemove(uploadKey);toast(file.name+': awaiting server validation');continue;
       }
      }
     }catch(e){
@@ -464,15 +567,17 @@ async function uploadFiles(files){
      // Network faults are not proof that a reservation is invalid.
      if(['network','timeout','server'].includes(SigmaCore.classify(e)))throw e;
     }
-    if(!reservation)sessionRemove('sigma-upload-'+hash);
+    if(!reservation)sessionRemove(uploadKey);
    }
    if(!reservation){
     setProgress('Waiting for bot verification',1);const token=await getTurnstileToken(op);op.check();
     setProgress('Requesting upload permission',2);
     reservation=await getJSON('/api/upload-start',{method:'POST',signal:op.signal,headers:{'Content-Type':'application/json'},
       body:JSON.stringify({size:file.size,name:file.name,sha256:hash,turnstileToken:token})});
-    op.check();reservation.created=Date.now();sessionSet('sigma-upload-'+hash,JSON.stringify(reservation));
+    op.check();reservation.created=Date.now();sessionSet(uploadKey,JSON.stringify(reservation));
    }
+   // Save an uploader-only deletion capability before transfer; covers retries and asynchronous publication.
+   saveOwnerReceipt(reservation.uploadId,reservation.receipt);
    op.reservation=reservation;op.check();
    const finishUpload=()=>getJSON('/api/upload-finish',{method:'POST',signal:op.signal,headers:{'Content-Type':'application/json'},
      body:JSON.stringify({uploadId:reservation.uploadId,receipt:reservation.receipt,metadata})});
@@ -509,15 +614,24 @@ async function uploadFiles(files){
      }
      if(!completion){op.check();setProgress('Validating SSEQ and HeartGold slot on server',94);completion=await finishUpload();}
    }
-   op.check();sessionRemove('sigma-upload-'+hash);if(op.reservation?.uploadId)sessionRemove(sessionKey(hash,op.reservation.uploadId));
-   op.reservation=null;op.hash=null;done++;setProgress('Awaiting trusted SSEQ validation',100);
-   const pendingJob={uploadId:reservation.uploadId,receipt:reservation.receipt,title:metadata.title};
-   sessionSet('sigma-validation-'+reservation.uploadId,JSON.stringify(pendingJob));
-   void watchValidation(pendingJob);
-   toast('Converted '+metadata.title+' to '+file.size+' SSEQ bytes; awaiting server event/bank validation.'+(converted.programSubstitutions?.length?' Lead program automatically changed to bank-compatible program '+converted.programSubstitutions[0].selected+'.':''));
+   op.check();sessionRemove(uploadKey);if(op.reservation?.uploadId)sessionRemove(sessionKey(hash,op.reservation.uploadId));
+   op.reservation=null;op.hash=null;done++;
+   const fallbackText=converted.programSubstitutions?.length?' Lead program automatically changed to bank-compatible program '+converted.programSubstitutions[0].selected+'.':'';
+   if(completion?.published===true){
+    setProgress('SSEQ verified and published',100);
+    sessionRemove('sigma-validation-'+reservation.uploadId);
+    toast('Published '+metadata.title+' as '+file.size+' validated SSEQ bytes.'+fallbackText);
+    void loadCatalog({silent:true});
+   }else{
+    setProgress('SSEQ saved; awaiting automatic publication',100);
+    const pendingJob={uploadId:reservation.uploadId,receipt:reservation.receipt,title:metadata.title};
+    sessionSet('sigma-validation-'+reservation.uploadId,JSON.stringify(pendingJob));
+    void watchValidation(pendingJob);
+    toast('SSEQ stored and verified; '+metadata.title+' awaits automatic server publication.'+fallbackText);
+   }
   }catch(e){
    if(op.canceled || SigmaCore.classify(e)==='cancelled'){
-    if(hash){sessionRemove('sigma-upload-'+hash);if(op.reservation?.uploadId)sessionRemove(sessionKey(hash,op.reservation.uploadId))}
+    if(hash){sessionRemove(uploadKey);if(op.reservation?.uploadId)sessionRemove(sessionKey(hash,op.reservation.uploadId))}
     if(op.reservation){void cancelRemote(op.reservation);op.reservation=null}
     break;
    }
@@ -636,27 +750,278 @@ function dragEnd(){const d=drag;drag=null;if(!d)return;d.row.classList.remove('d
 function queueDragStart(e){const handle=e.target.closest('.queue-handle');if(!handle||e.button!==0)return;const row=handle.closest('[data-queue-row]');queueDrag={from:Number(row.dataset.queueRow),startY:e.clientY,target:null};handle.setPointerCapture(e.pointerId);e.preventDefault()}
 function queueDragMove(e){if(!queueDrag)return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-queue-row]');if(target)queueDrag.target=Number(target.dataset.queueRow)}
 function queueDragEnd(){if(!queueDrag)return;const d=queueDrag;queueDrag=null;if(d.target!==null)moveQueue(d.from,d.target)}
-// Keep game-bank IDs internal. A public user chooses a destination slot when uploading,
-// while program compatibility is selected automatically by the SSEQ converter.
+// Upload supports separate songs or one arrangement of up to five MIDI files.
+// Each displayed instrument is a real program present in the selected game's SBNK.
+// Labels are based on verified SBNK type or user's own aliases, never invented GM timbres.
+function programLabel(context,program){
+ const pg=context.bank.programs.find(item=>item.index===program);
+ return pg ? window.SigmaInstrumentLibrary.programName(context.bankId,pg,window.SigmaInstrumentLibrary.readNames()) : `Program ${program}`;
+}
+// Display EVERY real program in the selected HeartGold bank. A MIDI's pitch range
+// is an export constraint, not a reason to hide an instrument from the user.
+// The codec must still reject any notes that a selected program cannot play.
+function programChoices(context,notes,{autoLabel='Auto (compatible bank program)',inherit=false}={}){
+ const compatible=new Set(window.SigmaTranscribe.bankCandidates(context,notes));
+ const fullyPlayable=context.bank.programs.filter(pg=>compatible.has(pg.index));
+ const limited=context.bank.programs.filter(pg=>!compatible.has(pg.index));
+ const render=pg=>`<option value="${pg.index}">${escapeHTML(programLabel(context,pg.index))}${compatible.has(pg.index)?'':' · note range limited'}</option>`;
+ const groups=[
+  `<optgroup label="Playable for all MIDI notes (${fullyPlayable.length})">${fullyPlayable.map(render).join('')}</optgroup>`,
+  limited.length?`<optgroup label="Other bank programs — limited note range (${limited.length})">${limited.map(render).join('')}</optgroup>`:''
+ ];
+ return `<option value="${inherit?'default':'auto'}">${escapeHTML(autoLabel)}</option>`+groups.join('');
+}
+function checkMidiProgramRanges(context,models,files,programs,trackPrograms){
+ const errors=[];
+ for(let i=0;i<models.length;i++){
+  const selection=programs[i];
+  for(const notes of models[i].voices){
+   const first=notes[0],key=`${i}:${first.sourceTrack}:${first.channel}`;
+   const selected=Object.hasOwn(trackPrograms,key)?trackPrograms[key]:selection;
+   if(selected==='auto'||selected===null||selected===undefined)continue;
+   const pg=context.bank.programs.find(p=>p.index===Number(selected));
+   if(!pg){errors.push(`${files[i].name}: program ${selected} is absent from bank ${context.bankId}`);continue}
+   const invalid=notes.find(n=>!pg.pitch_ranges.some(([low,high])=>n.pitch>=low&&n.pitch<=high));
+   if(invalid)errors.push(`${files[i].name}: program ${selected} cannot play MIDI note ${invalid.pitch} on track ${first.sourceTrack+1}/channel ${first.channel+1}. Choose another instrument, change the notes or select a compatible song bank.`);
+  }
+ }
+ return errors;
+}
+
+function openHeartGoldLibraryDialog(){
+ const profiles=window.SigmaBankProfiles,L=window.SigmaInstrumentLibrary;
+ modal(`<h2>HeartGold · all 39 sound banks</h2><p class="hint">Browse every extracted bank and hear short approximate tones. Choosing a program sets the default for new single-file uploads. The exported SSEQ must use the destination slot's actual bank.</p><div id="standaloneInstrumentBrowser"></div><p class="hint" id="selectedHGStatus">Select a program or continue browsing.</p>`);
+ const ref=L.mount($('#standaloneInstrumentBrowser'),{profiles,bankId:window.SigmaSSEQ.profileSlot(profiles,Number($('#hgSlot').value)).bankId,
+ selected:()=>Number($('#hgProgram').value),
+ onBank:(bank,slots)=>{if(slots.length){$('#hgSlot').value=String(slots[0]);$('#hgSlot').dispatchEvent(new Event('change'))}},
+ onChoose:(bank,program)=>{const id=L.slotsForBank(profiles,bank)[0]?.[0];if(id){$('#hgSlot').value=id;$('#hgSlot').dispatchEvent(new Event('change'));$('#hgProgram').value=String(program)}$('#selectedHGStatus').textContent=`Selected ${L.programName(bank,profiles.banks[String(bank)].programs.find(p=>p.index===program),L.readNames())} in bank ${bank}. Destination slot ${id}.`}});
+}
+async function openMidiArrangementDialog(files){
+ const arr=[...files];
+ if(arr.length>5||arr.length<1)return toast('Combine mode accepts 1–5 MIDI files',true);
+ if(arr.some(f=>!/\.(mid|midi)$/i.test(f.name)))return toast('Combine mode only accepts .mid or .midi files',true);
+ if(arr.some(f=>f.size>4*1024*1024))return toast('Each MIDI file must be smaller than 4 MiB',true);
+ let slot=Number($('#hgSlot').value),context=window.SigmaSSEQ.profileSlot(window.SigmaBankProfiles,slot);
+ let models;
+ try{
+  models=await Promise.all(arr.map(async file=>window.SigmaTranscribe.readMidi(new Uint8Array(await file.arrayBuffer()))));
+ }catch(e){return toast('Cannot inspect MIDI: '+e.message,true)}
+ const title=arr.length===1?arr[0].name.replace(/\.(mid|midi)$/i,''):arr.map(f=>f.name.replace(/\.(mid|midi)$/i,'')).join(' + ').slice(0,90);
+ modal(`<div class="midi-arranger"><h2>Combine MIDI into one song</h2>
+ <p class="hint">All ${arr.length} files start on the same timeline (including their initial rests). Each keeps its original tempo changes and PPQ. One .sseq will be uploaded.</p>
+ <label for="combinedTitle">Song title</label><input id="combinedTitle" maxlength="160" value="${escapeHTML(title)}" required>
+ <p class="hint">HeartGold US slot <span id="arrangedSlot">${slot}</span>, bank <span id="arrangedBank">${context.bankId}</span>: <strong>all <span id="arrangedCount">${context.bank.programs.length}</span> original bank programs are shown for each MIDI file</strong>, not just five. Instruments are grouped by MIDI-note compatibility. Programs with limited note ranges are selectable, but you must adjust the notes or choose another program before exporting if any notes fall outside their ranges. Program numbers are not General MIDI timbre names.</p>
+ <div class="hg-arrange-bank-tools"><label for="arrangeGameSlot">Destination music slot</label><select id="arrangeGameSlot" aria-label="Destination HeartGold game slot"></select></div>
+ <div class="midi-file-list">${arr.map((file,i)=>{
+  const model=models[i],compatible=window.SigmaTranscribe.bankCandidates(context,model.allNotes);
+  return `<section class="midi-file-row" data-midi-row="${i}">
+   <strong>${i+1}. ${escapeHTML(file.name)}</strong>
+   <small>${model.noteCount} notes · ${model.voices.length} MIDI parts · ${compatible.length} programs fit all notes</small>
+   <label for="midiProgram${i}">Instrument for this file</label>
+   <div class="hg-select-inline"><select id="midiProgram${i}" data-midi-program="${i}" aria-label="Instrument for ${escapeHTML(file.name)}">${programChoices(context,model.allNotes)}</select><button type="button" class="btn small" data-preview-file="${i}" aria-label="Preview instrument for ${escapeHTML(file.name)}">▶ Hear</button></div>
+   <div class="hg-file-controls" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <label>Start offset (s)<input type="number" id="midiOffset${i}" min="0" max="3600" step="0.01" value="0" style="max-width:92px"></label>
+    <label>Velocity (%)<input type="number" id="midiVelocity${i}" min="1" max="200" value="100" style="max-width:85px"></label>
+    <label><input type="checkbox" id="midiMute${i}"> Mute</label>
+    <label><input type="checkbox" id="midiSolo${i}"> Solo</label>
+   </div>
+   <details><summary>Advanced: instrument per MIDI track/channel</summary>
+    ${model.voices.map(voice=>{
+      const n=voice[0],key=`${i}:${n.sourceTrack}:${n.channel}`;
+      return `<label for="midiPart${i}_${n.sourceTrack}_${n.channel}">Track ${n.sourceTrack+1}, channel ${n.channel+1}</label>
+      <select id="midiPart${i}_${n.sourceTrack}_${n.channel}" data-midi-track-program="${key}" aria-label="${escapeHTML(file.name)} track ${n.sourceTrack+1} channel ${n.channel+1}">
+      ${programChoices(context,voice,{autoLabel:'Use this file’s selected instrument',inherit:true})}</select><button type="button" class="btn small" data-preview-part="${key}">▶ Hear</button>`;
+    }).join('')}
+   </details></section>`;
+ }).join('')}</div>
+ <details class="hg-arrangement-library" open><summary><strong>Browse all 39 HeartGold banks · preview and choose instruments</strong></summary><label for="hgFileTarget">Choose a MIDI file to assign the selected instrument to</label><select id="hgFileTarget">${arr.map((file,i)=>`<option value="${i}">${i+1}. ${escapeHTML(file.name)}</option>`).join('')}</select><div id="arrangementInstrumentBrowser"></div></details>
+ <p id="midiArrangeStatus" class="hint" role="status">Choose from every program in the selected bank, independently for each of up to five MIDI files (and optionally each track). SSEQ supports up to 16 simultaneous instrument tracks. Browser preview is synthesized, not original HeartGold samples.</p>
+ <div class="midi-arrange-actions"><button class="btn" id="previewCombinedMidi" type="button">▶ Preview combined SSEQ</button>
+ <button class="btn primary" id="uploadCombinedMidi" type="button">Upload one combined song</button></div></div>`);
+ const L=window.SigmaInstrumentLibrary,profiles=window.SigmaBankProfiles;
+ const targetSlot=$('#arrangeGameSlot');
+ const allSlots=Object.entries(profiles.sequence_slots).filter(([,s])=>profiles.banks[String(s.bank)]);
+ targetSlot.replaceChildren(...allSlots.map(([id,s])=>{const opt=document.createElement('option');opt.value=id;opt.textContent=`${id} · ${s.name} (bank ${s.bank})`;return opt}));targetSlot.value=String(slot);
+ let browser;
+ const applySlot=next=>{
+  slot=Number(next);context=window.SigmaSSEQ.profileSlot(profiles,slot);
+  $('#arrangedSlot').textContent=String(slot);$('#arrangedBank').textContent=String(context.bankId);$('#arrangedCount').textContent=String(context.bank.programs.length);
+  targetSlot.value=String(slot);
+  for(let i=0;i<models.length;i++){
+   const el=$(`#midiProgram${i}`),saved=el.value;
+   el.innerHTML=programChoices(context,models[i].allNotes);
+   el.value=context.bank.programs.some(p=>String(p.index)===saved)?saved:'auto';
+  }
+  for(const el of $$('[data-midi-track-program]')){
+   const saved=el.value,[i,track,channel]=el.dataset.midiTrackProgram.split(':').map(Number);
+   const voice=models[i].voices.find(v=>v[0].sourceTrack===track&&v[0].channel===channel);
+   el.innerHTML=programChoices(context,voice,{autoLabel:'Use this file’s selected instrument',inherit:true});
+   el.value=context.bank.programs.some(p=>String(p.index)===saved)?saved:'default';
+  }
+  updateInstrumentWarning();
+ };
+ browser=L.mount($('#arrangementInstrumentBrowser'),{profiles,bankId:context.bankId,
+  selected:()=>{const v=$(`#midiProgram${$('#hgFileTarget').value}`).value;return v==='auto'?null:Number(v)},
+  notes:[],
+  onBank:(bank,slots)=>{if(slots.length)applySlot(slots[0]);},
+  onChoose:(bank,program)=>{const i=Number($('#hgFileTarget').value);$(`#midiProgram${i}`).value=String(program);updateInstrumentWarning();}});
+ targetSlot.addEventListener('change',()=>{applySlot(targetSlot.value);browser.setBank(context.bankId,{notify:false})});
+ $('#hgFileTarget').addEventListener('change',()=>browser.render());
+ $$('[data-preview-file], [data-preview-part]').forEach(button=>button.addEventListener('click',()=>{
+  let prog;
+  if(button.hasAttribute('data-preview-file')){
+   const i=Number(button.dataset.previewFile),v=$(`#midiProgram${i}`).value;
+   prog=v==='auto'?window.SigmaTranscribe.bankCandidates(context,models[i].allNotes)[0]:Number(v);
+  }else{
+   const key=button.dataset.previewPart,[i,track,channel]=key.split(':').map(Number),v=$(`[data-midi-track-program="${key}"]`).value;
+   const lead=$(`#midiProgram${i}`).value;
+   const part=models[i].voices.find(notes=>notes[0].sourceTrack===track&&notes[0].channel===channel);
+   prog=v==='default'?(lead==='auto'?window.SigmaTranscribe.bankCandidates(context,part)[0]:Number(lead)):Number(v);
+  }
+  const item=context.bank.programs.find(pg=>pg.index===prog);if(item)L.preview(item,60,context.bankId,profiles);
+ }));
+ const readConfig=()=>{
+  const selected=$('#combinedTitle').value.trim();if(!selected)throw Error('Give the combined song a title');
+  const programs=arr.map((_,i)=>$(`#midiProgram${i}`).value);
+  const trackPrograms={};
+  for(const field of $$('[data-midi-track-program]'))if(field.value!=='default')trackPrograms[field.dataset.midiTrackProgram]=Number(field.value);
+  const errors=checkMidiProgramRanges(context,models,arr,programs,trackPrograms);
+  if(errors.length)throw Error(errors[0]+(errors.length>1?` (${errors.length} affected tracks)`:''));
+  const fileSettings=arr.map((_,i)=>({offsetSeconds:Number($(`#midiOffset${i}`).value),
+    velocityPercent:Number($(`#midiVelocity${i}`).value),mute:$(`#midiMute${i}`).checked,solo:$(`#midiSolo${i}`).checked}));
+  for(const settings of fileSettings)if(!Number.isFinite(settings.offsetSeconds)||settings.offsetSeconds<0||settings.offsetSeconds>3600||!Number.isFinite(settings.velocityPercent)||settings.velocityPercent<1||settings.velocityPercent>200)throw Error('Start offset or velocity is outside permitted range');
+  return {files:arr,title:selected,slot,loop:$('#hgLoop').checked,programs,trackPrograms,fileSettings};
+ };
+ const status=$('#midiArrangeStatus');
+ const updateInstrumentWarning=()=>{
+  const programs=arr.map((_,i)=>$(`#midiProgram${i}`).value),trackPrograms={};
+  for(const field of $$('[data-midi-track-program]'))if(field.value!=='default')trackPrograms[field.dataset.midiTrackProgram]=Number(field.value);
+  const errors=checkMidiProgramRanges(context,models,arr,programs,trackPrograms);
+  if(errors.length){
+   status.textContent=`Instrument note-range warning: ${errors[0]}${errors.length>1?` (+${errors.length-1} more)`:''}`;
+   status.style.color='var(--danger, #c45a36)';
+  }else{
+   status.textContent=`All selected programs are compatible with the MIDI notes. Each file has ${context.bank.programs.length} original HeartGold bank program choices (including range-limited programs).`;
+   status.style.color='';
+  }
+ };
+ $$('[data-midi-program], [data-midi-track-program]').forEach(field=>field.addEventListener('change',updateInstrumentWarning));
+ updateInstrumentWarning();
+ $('#previewCombinedMidi').onclick=async()=>{
+  const button=$('#previewCombinedMidi');
+  if(midiPreview&&!midiPreview.paused){midiPreview.pause();button.textContent='▶ Preview combined SSEQ';return}
+  button.disabled=true;status.textContent='Preparing combined SSEQ preview...';
+  const player=new window.SigmaSeqAudio();
+  player.primeFromGesture(); // Must run before awaiting file reads on iOS.
+  try{
+   const options=readConfig();
+   const result=await window.SigmaTranscribe.combineMidiFiles(arr,{...options,programPerFile:options.programs,trackOverrides:options.trackPrograms,fileSettings:options.fileSettings,profiles:window.SigmaBankProfiles});
+   if(midiPreview)midiPreview.dispose();if(midiPreviewUrl)URL.revokeObjectURL(midiPreviewUrl);
+   midiPreview=player;midiPreviewUrl=URL.createObjectURL(new Blob([result.bytes],{type:'application/octet-stream'}));
+   player.slot=slot;player.src=midiPreviewUrl;
+   player.onended=()=>{button.textContent='▶ Preview combined SSEQ'};
+   await player.play({primed:true});
+   status.textContent=`Preview playing: ${result.parsed.notes.length} notes, ${result.parsed.tracks.length} real HeartGold instrument programs, ${result.bytes.length} SSEQ bytes. Timbre is approximate.`;
+   button.textContent='■ Stop preview';
+  }catch(e){player.dispose();status.textContent='Preview error: '+e.message;toast(e.message,true)}
+  finally{button.disabled=false}
+ };
+ $('#uploadCombinedMidi').onclick=()=>{
+  try{const combined=readConfig();closeModal();void uploadFiles([{combinedMidi:true,...combined,trackOverrides:combined.trackPrograms}],{slot:combined.slot,loop:combined.loop,review:true});}
+  catch(e){status.textContent=e.message;toast(e.message,true)}
+ };
+}
 function openUploadMusicDialog(){
  if(state.busy)return toast('Another operation is in progress',true);
- modal(`<h2>Upload music</h2><p class="hint">Choose the in-game destination for your music. MP3, WAV and other supported sources are converted to validated SSEQ before upload. No source audio is stored.</p>
-  <label for="uploadTargetSlot">Game music slot</label>
+ modal(`<h2>Upload music</h2><p class="hint">All uploaded music is converted to compact HeartGold-compatible SSEQ. Original MIDI/audio files are not stored.</p>
+  <label for="uploadTargetBank">HeartGold bank (all 39)</label>
+  <select id="uploadTargetBank" aria-label="Choose HeartGold bank"></select>
+  <label for="uploadTargetSlot">Game music slot (bank is linked to slot)</label>
   <select id="uploadTargetSlot" aria-label="Game music slot"></select>
+  <label for="uploadTargetProgram">Instrument for single-file conversion</label>
+  <div class="hg-select-inline"><select id="uploadTargetProgram"></select><button type="button" class="btn small" id="previewUploadProgram">▶ Hear</button></div>
+  <details class="hg-upload-browser"><summary>Explore every instrument · preview before selecting</summary><div id="uploadInstrumentBrowser"></div></details>
+  <label for="uploadAudioMode">Arranger sangen · forslag</label><select id="uploadAudioMode"><option value="auto">Auto (anbefalt)</option><option value="melody">Kun melodi</option><option value="melody-chords">Melodi med akkompagnement</option></select><p class="hint">Etter at du velger én WAV, MP3 eller støttet lydfil, får du et redigerbart forslag som kan godtas med ett trykk.</p>
+  <div class="midi-mode-switch" role="group" aria-label="Upload mode">
+   <label><input type="radio" name="uploadMusicMode" value="separate" checked> Separate songs</label>
+   <label><input type="radio" name="uploadMusicMode" value="combine"> Combine up to 5 MIDI files into one song</label>
+  </div>
+  <p id="uploadModeInfo" class="hint">Each chosen file becomes a separate SSEQ and library song.</p>
   <label class="compact-check" style="display:flex;gap:9px;margin:14px 0;align-items:center"><input id="uploadRepeat" type="checkbox"> Loop sequence</label>
   <button id="chooseMusicFiles" type="button" class="btn primary">＋ Choose music files</button>`);
- const internalSlot=$('#hgSlot');
- const chosen=$('#uploadTargetSlot');
- chosen.replaceChildren(...Array.from(internalSlot.options,option=>option.cloneNode(true)));
- chosen.value=internalSlot.value;
- $('#uploadRepeat').checked=$('#hgLoop').checked;
- $('#chooseMusicFiles').onclick=()=>{
-  internalSlot.value=chosen.value;
-  internalSlot.dispatchEvent(new Event('change'));
-  $('#hgLoop').checked=$('#uploadRepeat').checked;
-  closeModal();
-  $('#fileInput').click();
+ $('#uploadAudioMode').value=uploadAudioMode;
+ const internalSlot=$('#hgSlot'),chosen=$('#uploadTargetSlot'),bankField=$('#uploadTargetBank'),mainProgram=$('#uploadTargetProgram');
+ const L=window.SigmaInstrumentLibrary,profiles=window.SigmaBankProfiles;
+ const current=window.SigmaSSEQ.profileSlot(profiles,Number(internalSlot.value));
+ bankField.innerHTML=L.bankOptions(profiles,current.bankId);
+ const populateSlots=(bankId,preferred)=>{
+  const slots=L.slotsForBank(profiles,bankId);
+  chosen.replaceChildren(...slots.map(([id,s])=>{const opt=document.createElement('option');opt.value=id;opt.textContent=`${id} · ${s.name}`;return opt}));
+  chosen.value=slots.some(([id])=>id===String(preferred))?String(preferred):slots[0]?.[0];
+  populatePrograms();
  };
+ const populatePrograms=()=>{
+  const context=window.SigmaSSEQ.profileSlot(profiles,Number(chosen.value)),old=mainProgram.value||$('#hgProgram').value;
+  mainProgram.innerHTML=programChoices(context,[]);
+  mainProgram.value=context.bank.programs.some(pg=>String(pg.index)===old)?String(old):'auto';
+ };
+ populateSlots(current.bankId,internalSlot.value);
+ const browser=L.mount($('#uploadInstrumentBrowser'),{profiles,bankId:current.bankId,
+  selected:()=>mainProgram.value==='auto'?null:Number(mainProgram.value),
+  onBank:bank=>{bankField.value=String(bank);populateSlots(bank);},
+  onChoose:(_,program)=>{mainProgram.value=String(program);}});
+ bankField.addEventListener('change',()=>{populateSlots(bankField.value);browser.setBank(bankField.value,{notify:false})});
+ chosen.addEventListener('change',()=>populatePrograms());
+ mainProgram.addEventListener('change',()=>browser.render());
+ $('#previewUploadProgram').addEventListener('click',()=>{
+  const context=window.SigmaSSEQ.profileSlot(profiles,Number(chosen.value));
+  const n=mainProgram.value==='auto'?context.bank.programs[0]?.index:Number(mainProgram.value);
+  const pg=context.bank.programs.find(pg=>pg.index===n);if(pg)L.preview(pg,60,context.bankId,profiles);
+ });
+ $('#uploadRepeat').checked=$('#hgLoop').checked;
+ const switchMode=()=>{$('#uploadModeInfo').textContent=$('input[name="uploadMusicMode"]:checked').value==='combine'
+  ? 'Select one to five .mid/.midi files. You will choose a different HeartGold instrument for each file before uploading one combined SSEQ.'
+  : 'Each file becomes a separate SSEQ song.'};
+ $$('input[name="uploadMusicMode"]').forEach(el=>el.addEventListener('change',switchMode));
+ $('#chooseMusicFiles').onclick=()=>{
+  uploadChoiceMode=$('input[name="uploadMusicMode"]:checked').value;
+  uploadAudioMode=$('#uploadAudioMode').value;
+  internalSlot.value=chosen.value;internalSlot.dispatchEvent(new Event('change'));
+  if(mainProgram.value!=='auto')$('#hgProgram').value=mainProgram.value;
+  $('#hgLoop').checked=$('#uploadRepeat').checked;
+  $('#fileInput').accept=uploadChoiceMode==='combine'?'.mid,.midi':'.sseq,.mid,.midi,.mp3,.wav,.flac,.ogg,.opus,.m4a,.aac';
+  closeModal();$('#fileInput').click();
+ };
+}
+async function openAudioArrangementDialog(file,{slot=Number($('#hgSlot').value),mode='auto',loop=$('#hgLoop').checked}={}){
+ if(state.busy)return toast('Another operation is in progress',true);
+ const controller=new AbortController();state.busy=true;$('#uploadBtn').disabled=true;
+ modal('<h2>Arranger sangen</h2><p id="arrangePending" role="status">Analyserer lyd uten å laste opp originalfilen…</p><button type="button" class="btn" id="cancelAnalysis">Avbryt analyse</button>');
+ // modal() disposes previous editor but does not retain a controller before this point.
+ arrangeController=controller;
+ $('#cancelAnalysis').onclick=()=>{controller.abort();closeModal()};
+ try{
+  // Always analyze once with the full multi-voice setting. Switching modes
+  // thereafter rearranges the cached note data, never re-decodes the file.
+  const model=await window.SigmaTranscribe.transcribeAudio(file,{signal:controller.signal,audioMode:'melody-chords',onProgress:(text,part)=>{
+   const node=$('#arrangePending');if(node)node.textContent=text+' · '+Math.round((part||0)*100)+'%';
+  }});
+  if(controller.signal.aborted)return;
+  arrangeController=null;state.busy=false;$('#uploadBtn').disabled=false;
+  modal('<h2>Arranger sangen</h2><div id="arrangeRoot"></div>');
+  activeArrangeUi=window.SigmaArrangeUI.mount($('#arrangeRoot'),{model,sourceFile:file,profiles:window.SigmaBankProfiles,slot,mode,loop,
+   onAccept:converted=>{closeModal();void uploadFiles([file],{slot,loop:converted.parsed.infinite,preconverted:converted,review:false});},
+   onCancel:()=>closeModal()});
+ }catch(error){if(!controller.signal.aborted){toast('Arrangement: '+error.message,true);closeModal()}}
+ finally{if(arrangeController===controller)arrangeController=null;if(state.busy){state.busy=false;$('#uploadBtn').disabled=false}}
+}
+function selectedMusicFiles(files){
+ const list=[...files];if(!list.length)return;
+ if(uploadChoiceMode==='combine')void openMidiArrangementDialog(list);
+ else if(list.length===1&&/\.(wav|mp3|m4a|aac|flac|ogg|opus)$/i.test(list[0].name))void openAudioArrangementDialog(list[0],{slot:Number($('#hgSlot').value),mode:uploadAudioMode,loop:$('#hgLoop').checked});
+ else void uploadFiles(list,{audioMode:uploadAudioMode==='auto'?'melody-chords':uploadAudioMode,review:true});
+ uploadChoiceMode='separate';
+ $('#fileInput').value='';
 }
 // HeartGold slot/program options derived from the user's local SBNK and bankkart.json.
 function setupHeartGoldTargets(){
@@ -672,14 +1037,15 @@ function setupHeartGoldTargets(){
  select.addEventListener('change',update);update();
 }
 setupHeartGoldTargets();
+$('#browseHeartGoldBanks').onclick=openHeartGoldLibraryDialog;
 // Browser events.
 $('#menuBtn').onclick=()=>{$('#sidebar').classList.toggle('open');$('#scrim').classList.toggle('hide')};$('#scrim').onclick=closeMenu;
 $('#refreshBtn').onclick=()=>void refreshService();$('#newPlaylist').onclick=createPlaylist;$('#newFolder').onclick=()=>newFolder();$('#sigmaExportBtn').onclick=openSigmaExportPicker;
 $('#uploadBtn').onclick=()=>state.ready?openUploadMusicDialog():toast('Configure Vercel and Supabase to enable uploads',true);$('#cancelUpload').onclick=cancelUpload;
-$('#fileInput').onchange=e=>void uploadFiles(e.target.files);$('#backupBtn').onclick=()=>openExportPicker('backup');$('#restoreBtn').onclick=()=>$('#backupInput').click();$('#backupInput').onchange=e=>void importBackup(e.target.files[0]);
+$('#fileInput').onchange=e=>selectedMusicFiles(e.target.files);$('#backupBtn').onclick=()=>openExportPicker('backup');$('#restoreBtn').onclick=()=>$('#backupInput').click();$('#backupInput').onchange=e=>void importBackup(e.target.files[0]);
 $('#heroPlay').onclick=()=>{const ids=viewTracks().map(t=>t.id);if(!ids.length)return toast('No songs in this collection');setQueue(ids,false);void playAt(0)};
 $('#heroShuffle').onclick=()=>{const ids=viewTracks().map(t=>t.id);if(!ids.length)return toast('No songs in this collection');setQueue(ids,true);void playAt(0)};
-$('#playPause').onclick=()=>{if(!state.queue.length){const ids=viewTracks().map(t=>t.id);if(!ids.length)return toast('Upload a song first');setQueue(ids,false);void playAt(0)}else if(audio.paused){if(audio.src){void enableAudio().then(()=>audio.play().catch(e=>toast(e.message,true)))}else void playAt(state.index<0?0:state.index)}else audio.pause()};
+$('#playPause').onclick=()=>{if(!state.queue.length){const ids=viewTracks().map(t=>t.id);if(!ids.length)return toast('Upload a song first');setQueue(ids,false);void playAt(0)}else if(audio.paused){if(audio.src){audio.setSoundMode(state.normalize,state.target);void audio.play().catch(e=>toast(e.message,true))}else void playAt(state.index<0?0:state.index)}else audio.pause()};
 $('#prev').onclick=()=>advance(-1);$('#next').onclick=()=>advance(1);$('#shuffleToggle').onclick=toggleShuffle;$('#repeatToggle').onclick=()=>{state.repeat=state.repeat==='off'?'all':state.repeat==='all'?'one':'off';persist();renderPlayer()};$('#queueBtn').onclick=showQueue;
 $('#volume').oninput=e=>{state.volume=Number(e.target.value);audio.volume=state.volume;state.muted=false;audio.muted=false;persist();renderPlayer()};$('#mute').onclick=()=>{state.muted=!state.muted;audio.muted=state.muted;persist();renderPlayer()};$('#seek').oninput=e=>{if(Number.isFinite(audio.duration))audio.currentTime=audio.duration*Number(e.target.value)/1000};
 $('#normalizeToggle').onchange=e=>{state.normalize=e.target.checked;void enableAudio();applyGain();persist()};$('#normalizeLevel').onchange=e=>{state.target=Number(e.target.value);applyGain();persist()};$('#search').oninput=e=>{state.search=e.target.value;render()};$('#sortBy').onchange=e=>{state.sort=e.target.value;persist();render()};
@@ -690,7 +1056,7 @@ $('#trackList').onkeydown=e=>{const b=e.target.closest('[data-play-id]');if(b&&(
 $('#trackList').addEventListener('pointerdown',startDrag);window.addEventListener('pointermove',dragMove);window.addEventListener('pointerup',dragEnd);window.addEventListener('pointercancel',dragEnd);
 $('#modalRoot').addEventListener('pointerdown',queueDragStart);window.addEventListener('pointermove',queueDragMove);window.addEventListener('pointerup',queueDragEnd);window.addEventListener('pointercancel',()=>{queueDrag=null});
 $('#modalRoot').onclick=e=>{const add=e.target.closest('[data-addto]'),newPl=e.target.closest('[data-create-from]'),move=e.target.closest('[data-queue-move]'),play=e.target.closest('[data-queue-play]'),action=e.target.closest('[data-action]');if(add){addPlaylistTrack(add.dataset.track,add.dataset.addto);closeModal()}else if(newPl){const id=newPl.dataset.createFrom;closeModal();createPlaylist();if(state.view.startsWith('playlist:'))addPlaylistTrack(id,state.view.slice(9))}else if(move)moveQueue(Number(move.dataset.queueIndex),Number(move.dataset.queueIndex)+Number(move.dataset.queueMove));else if(play){closeModal();void playAt(Number(play.dataset.queuePlay))}else if(action){if(action.dataset.action==='add'){closeModal();choosePlaylist(action.dataset.id)}else if(action.dataset.action==='download'){const t=state.tracks.find(t=>t.id===action.dataset.id);if(t){closeModal();void fetchTrack(t).then(b=>download(b,((t.original_filename||t.title+'.sseq').replace(/\.[^.]+$/,'')+'.sseq'))).catch(e=>toast(e.message,true))}}}};
-audio.onplay=renderPlayer;audio.onpause=renderPlayer;audio.onended=()=>{if(state.repeat==='one'){audio.currentTime=0;void audio.play()}else advance(1)};audio.onloadedmetadata=()=>{if(pendingResume){const id=current()?.id;const seconds=SigmaCore.validResume(pendingResume,id,audio.duration);if(seconds!==null && audio.currentSrc.includes(encodeURIComponent(id))){audio.currentTime=seconds;pendingResume=null;}else if(id&&pendingResume.trackId!==id){pendingResume=null}}renderPlayer()};audio.ontimeupdate=()=>{renderPlayer();const n=Math.floor(audio.currentTime/5);if(n!==historyTick){historyTick=n;persist()}};audio.onerror=()=>{if(audio.src)toast('SSEQ missing or not supported. Try next song.',true)};
+audio.onplay=renderPlayer;audio.onpause=renderPlayer;audio.onended=()=>{if(state.repeat==='one'){audio.currentTime=0;void audio.play()}else advance(1)};audio.onloadedmetadata=()=>{if(pendingResume){const id=current()?.id;const seconds=SigmaCore.validResume(pendingResume,id,audio.duration);if(seconds!==null && audio.currentSrc.includes(encodeURIComponent(id))){audio.currentTime=seconds;pendingResume=null;}else if(id&&pendingResume.trackId!==id){pendingResume=null}}renderPlayer()};audio.ontimeupdate=()=>{renderPlayer();const n=Math.floor(audio.currentTime/5);if(n!==historyTick){historyTick=n;persist()}};audio.onerror=error=>{if(audio.src)toast('Audio playback: '+(error?.message||'The SSEQ could not be played'),true)};
 window.addEventListener('pagehide',()=>{
  persist();pageActive=false;lifecycleEpoch++;state.ready=false;
  catalogAbort?.abort();configAbort?.abort();audio.pause();stopRealtime();refreshFlight=null;configFlight=null;
@@ -702,7 +1068,8 @@ window.addEventListener('pageshow',e=>{
  void refreshService({silent:true});
 });
 window.addEventListener('online',()=>{if(pageActive)void refreshService({silent:true})});
-document.addEventListener('visibilitychange',()=>{if(pageActive&&!document.hidden)void loadCatalog({silent:true})});
+document.addEventListener('visibilitychange',()=>{if(pageActive&&!document.hidden){void loadCatalog({silent:true});void audio.recoverIfInterrupted()}});
+window.addEventListener('pageshow',()=>{if(pageActive)void audio.recoverIfInterrupted()});
 async function init(){
  loadPersonal();audio.volume=state.volume;audio.muted=state.muted;audio.setSoundMode(state.normalize,state.target);render();resumeValidationWatchers();
  await refreshService({silent:true});

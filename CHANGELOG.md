@@ -1,3 +1,80 @@
+## 2026-11-17 — v1.7.5 five-minute QA (not deployed)
+- O(n log n) overlap counting in arranger instead of quadratic comparisons on long songs.
+- Instrument key-range checks operate on distinct pitch sets, not repeated note attacks.
+- Mobile note editor displays bounded 15-second windows for long recordings and supports time navigation; all source notes remain in SSEQ export.
+- Real 300-second stereo WAV + MP3 automated Chromium integration cases with 150 known events, strict onset/end timing, SSEQ SHA-relevant byte preservation, one mocked submission per source.
+- 8,000-note stress regression and persistent ledger update. Production/staging and original HeartGold/Sigma Dex unverified.
+
+## v1.7.4 — Arranger song and timing acceptance
+
+# sigma-themes v1.7.4 — “Arranger sangen” release candidate (local only)
+
+**Source basis:** v1.7.3 complete archive; current `rubenhjo/S-themes` main could not be fetched through the available network. No upstream branch, live Supabase data, existing songs/IDs/playlists/folders or Vercel deployment was modified. **Before deploying, compare this full source tree with an authenticated/current checkout.**
+
+**New:** One-file Auto WAV/MP3/M4A review with up to five editable *parts* (not five simultaneous notes), per-part instrument/volume/support/mute/preview solo, per-onset note removal and undo, original-versus-SSEQ region A/B and separate listening/game loops. All submitted music files remain **validated ≤65,536-byte SSEQ only**. Existing five-MIDI arranger, 39 bank metadata, public player, playlists and song deletion code remain in the tree.
+
+**Measured local synthetic timing:** known WAV/MP3 strict F1 74.5% → 100%; three additional uninfluenced synthetic references 61.1% → 88.9%; not verified on arbitrary recorded music. See [`ARRANGER_QC.md`](ARRANGER_QC.md) and [`ARRANGER_TIMING_RESULTS.json`](ARRANGER_TIMING_RESULTS.json).
+
+**Do not deploy the two pending SQL migrations directly to production**. Historic SQL snapshots are retained in `docs/legacy_migrations/`; active staged migration versions are `20261116220000_song_deletion.sql` then `20261116221000_distinct_sseq_submissions.sql`. Install **only on an isolated clone with real tests first**, preserve already deployed migration history. See `DEPLOYMENT.md`. No source ZIP contains private M4A or Nintendo audio.
+
+
+## 1.7.3-polyphony-qc-rc1 — 2026-11-16
+
+- Conservatively distinguish harmonic overtones from true independent upper notes, preserving four/six/eight-note synthetic chords without adding solo harmonics.
+- Added generated source MIDI and identical WAV/MP3 fixtures; onset 50ms and relative offset metric; frozen 1.7.2 baseline; per-stage note diagnostics and held-out benchmark cases.
+- Added ordinary-browser-file-selector regression covering all eighteen WAV/MP3 trials and 1–8 simultaneous notes; runs in GitHub CI after FFmpeg setup.
+- Compared librosa YIN on the same fixtures; found it unsuitable as a polyphonic replacement (source/script and quantitative report retained).
+- Prepared non-destructive Supabase migration to allow **independent** same-SSEQ-byte/slot catalogue IDs, retaining ID-based retries and upload quotas; NOT yet executed or staging-verified.
+- Retained all v1.7.2 song deletion, 39 banks, 2,593 program entries, five-MIDI import, SSEQ-only publication, catalogue, playlist and sprite source.
+- Private before/after Cute melody previews generated locally using same bank 702 program 21 genuine PCM samples; intentionally excluded from public code ZIP.
+- GitHub-main comparison, live Vercel/Supabase staging, real Sigma Dex application, HeartGold US gameplay, iPhone Safari and ndspy **NOT TESTED** in this environment.
+
+---
+
+## 2026-11-16 — v1.7.2-audio-qc-rc1 (local-only candidate)
+
+- F1 of deterministic 20-case audio-note benchmark improved 0.8037 → 0.9038 on frozen v1.7.1 comparison; still not certified for arbitrary music.
+- Conservative overtone and bass candidate checks; preserved browser chord conversion test.
+- Fixed valid empty 60-byte SWAR parsing; guarded out-of-range SBNK key-split selection; verified all 78 original bank and wave files privately.
+- Shared decoded PCM voice path for original instrument preview and SSEQ playback: pitch, loops, pan and approximate ADSR.
+- Reduced temporary signed audio-link expiry to 60 seconds and added targeted regression test.
+- Added reproducible benchmark/real private-source browser tests, case-level results, independent evidence and new release/deploy/open-issue documents.
+- Updated release manifest and GitHub CI; all 147 unit tests and 21 Chromium suites pass locally, original game and production acceptance not tested. No Nintendo samples or private recordings shipped.
+
+# v1.7.1 — Delete songs securely
+
+- Uploader-only, browser-stored scoped deletion receipt and optional server-secret administrator deletion key.
+- Explicit confirmation in each shared song's ••• menu.
+- Server-only deletion authorization and PostgreSQL tombstone; private Storage deletion with cron retries.
+- Public catalog and audio API exclude deleted songs. Identical-hash songs remain independently addressable.
+- Added 12 Node tests and two Chromium deletion scenarios; all 143 Node tests pass.
+- **Production migration and Vercel admin key configuration required**; not deployed or tested against a live database.
+
+## v1.7.0-regression-repair (2026-11-16)
+
+- Slått sammen v1.6.0 (39-bank-instrumentkatalog) og tidligere QC-migrasjoner, serverpublisering, bedre transkripsjon, forhåndsvisning og MIDI-arrangement.
+- Forbedret lokal originalsampleavspilling for SSEQ når SHA-matchede SBNK/SWAR er importert; støtter bankens wave-slot mapping, sample-loop, pitch og pan med omtrentlige envelopes.
+- Gjeninnført 30/100/500-kvoter, duplikate sanghasher som egne katalogoppføringer og automatisk servervalidert publisering med fallback.
+- 39 banker og 2 593 programmer, fem MIDI-filer, separat instrumentvalg og konverteringsreview, oppdaterte tester for SSEQ-only backup.
+- Teststatus og manglende produksjons/lydkvalitets-verifikasjon: `RELEASE_QC_2026-11-16.md`.
+
+# v1.6.0 — November 16, 2026
+
+- Browse all 39 original HeartGold US banks with descriptive location/theme labels and all program IDs.
+- Filter and search by bank, program, sound category, and user-edited local instrument nickname.
+- Preview button for each instrument, with clearly labeled synthetic preview fallback.
+- Optional local verified SBNK/SWAR import; raw per-program ADSR/wave IDs/key-region data and sample-based PCM previews become available when imported.
+- Per-file and per-track program selection and five-MIDI SSEQ compatibility preserved; destination bank selection updates game slot.
+- Added Node SBNK/SWAR decoder/catalog tests and Chromium end-to-end browser integration checks.
+
+# v1.5.1 — Complete instrument program menus (2026-11-16)
+
+- Every program in the chosen HeartGold SBNK bank is now shown, even when a MIDI note is outside that program's sample pitch range. In bank 702 the selector lists all 68 original program IDs (plus Auto) rather than filtering potentially desired instruments out.
+- Each of up to five uploaded MIDI files retains an independent program selector; advanced track/channel selections also show the complete bank.
+- Clear live warnings and pre-upload validation prevent silently replacing a chosen program or exporting unsupported notes.
+- Added Chromium regression checking complete 68-program menu and rejection/recovery for a restricted program.
+- Instrument program numbers are not sound names; browser preview remains approximate and cannot guarantee original Nintendo timbres without local sample metadata and audio.
+
 ## v1.4.4 — 2026-11-15 (GitHub CI and connection-status repair)
 - Fix the secure-origin Playwright SSEQ upload fixture: its temporary HTTP server now serves the actual `sseq_transcribe_worker.js` and imported `sseq_transcribe.js` instead of returning an HTML document to all Worker requests. This fixes a deterministic false negative in the test fixture, not a failure proven in production.
 - Add `browser_transcription_worker.py` verifying actual Chromium background-Worker WAV/MP3→SSEQ conversion with synthetic audio without relying on restricted localhost networking.

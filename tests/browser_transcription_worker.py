@@ -1,8 +1,8 @@
 """Verify that the actual offline FFT Worker runs and produces a valid SSEQ.
 
 Works without local HTTP navigation, including locked-down browser environments.
-The Worker is assembled from the exact source files: only its relative importScripts
-line is replaced by the real, inline sseq_transcribe.js implementation.
+The Worker is assembled from the exact source files, replacing the importScripts
+line with inline sigma_note_refine.js and sseq_transcribe.js for blob-URL testing.
 """
 import asyncio
 import base64
@@ -14,9 +14,9 @@ from browser_public import ROOT
 
 async def main():
     worker_source = (ROOT/'sseq_transcribe_worker.js').read_text()
-    import_line = "importScripts('sseq_transcribe.js');"
+    import_line = "importScripts('sigma_note_refine.js','sseq_transcribe.js');"
     assert worker_source.count(import_line) == 1
-    worker_source = (ROOT/'sseq_transcribe.js').read_text() + '\n' + worker_source.replace(import_line, '')
+    worker_source = (ROOT/'sigma_note_refine.js').read_text() + '\n' + (ROOT/'sseq_transcribe.js').read_text() + '\n' + worker_source.replace(import_line, '')
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True,
             executable_path='/usr/bin/chromium' if os.path.exists('/usr/bin/chromium') else None,

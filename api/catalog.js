@@ -9,7 +9,7 @@ export async function readCatalog(fetchPage=sb){
   const tracks=[],seen=new Set();let cursor=null;
   for(let page=0;page<Math.ceil(MAX_ROWS/PAGE_SIZE);page++){
     const filter=cursor ? `&or=(created_at.lt.${encodeURIComponent(cursor.created_at)},and(created_at.eq.${encodeURIComponent(cursor.created_at)},id.lt.${cursor.id}))` : '';
-    const requestUrl=`/rest/v1/theme_tracks?select=id,title,artist,album,duration_s,sha256,storage_path,mime_type,original_filename,size_bytes,created_at,sseq_id,loop_enabled,lufs,true_peak&mime_type=eq.application%2Foctet-stream&sseq_id=not.is.null&order=created_at.desc,id.desc&limit=${PAGE_SIZE}${filter}`;
+    const requestUrl=`/rest/v1/theme_tracks?select=id,title,artist,album,duration_s,sha256,storage_path,mime_type,original_filename,size_bytes,created_at,sseq_id,loop_enabled,lufs,true_peak&mime_type=eq.application%2Foctet-stream&sseq_id=not.is.null&deleted_at=is.null&order=created_at.desc,id.desc&limit=${PAGE_SIZE}${filter}`;
     let rows;
     for(let attempt=0;attempt<3;attempt++){
       try{rows=await fetchPage(requestUrl);break;}catch(e){

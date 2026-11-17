@@ -49,6 +49,26 @@ export default async function handler(req,res){
   if(!assigned)throw err(409,'Could not assign HeartGold slot');
   const queued=await rpc('queue_theme_upload',{p_id:row.id,p_secret_hash:row.secret_hash,p_title:details.title,p_artist:details.artist,p_album:details.album});
   if(!queued)throw err(409,'Upload already queued, canceled, or expired');
-  res.setHeader('Cache-Control','no-store');return res.status(202).json({pending:true,uploadId:row.id,verifiedBytes:bytes,message:'Queued for trusted SSEQ event and bank validation'});
+  // The server has already downloaded the exact stored bytes, checked SHA-256
+  // and run the full SSEQ/bank parser. Complete the fenced publication now,
+  // in this upload request: no manual GitHub Actions trigger is required.
+  // If the database is temporarily unavailable, leave the existing queued
+  // claim for the scheduled fallback worker; never return fake publication.
+  let published=null;
+  try{
+   const claim=await rpc('claim_theme_validation_for_upload',{p_id:row.id,p_secret_hash:row.secret_hash});
+   if(claim?.validation_claim_id){
+    published=await rpc('publish_theme_upload',{
+     p_id:row.id,p_secret_hash:row.secret_hash,p_title:details.title,
+     p_artist:details.artist,p_album:details.album,p_duration:details.duration_s,
+     p_mime:'application/octet-stream',p_lufs:null,p_peak:null,p_claim_id:claim.validation_claim_id
+    });
+   }
+  }catch(publicationError){
+   console.error('Inline SSEQ publication deferred:',String(publicationError.message).slice(0,200));
+  }
+  res.setHeader('Cache-Control','no-store');
+  if(published?.id)return res.status(200).json({published:true,uploadId:row.id,verifiedBytes:bytes,message:'Validated SSEQ published automatically'});
+  return res.status(202).json({pending:true,uploadId:row.id,verifiedBytes:bytes,message:'Verified SSEQ queued for automatic retry'});
  }catch(e){return safeError(res,e)}
 }

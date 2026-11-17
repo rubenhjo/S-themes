@@ -14,10 +14,6 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - name: Validate release file layout
-        run: node scripts/check-release-layout.mjs
-      - name: Check JavaScript syntax
-        run: npm run lint
       - name: Ensure FFmpeg and FFprobe for MP3/WAV validation fixtures
         shell: bash
         run: |
@@ -36,6 +32,12 @@ jobs:
           ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 \
             "$RUNNER_TEMP/sigma-ci-ffmpeg-check.mp3"
           rm -f "$RUNNER_TEMP/sigma-ci-ffmpeg-check.mp3"
+      - name: Validate release file layout
+        run: node scripts/check-release-layout.mjs
+      - name: Complete local verification command
+        run: npm run verify
+      - name: Check JavaScript syntax
+        run: npm run lint
       - name: Run Node API and SSEQ tests
         run: npm test
       - name: Verify issue ledger
@@ -46,6 +48,12 @@ jobs:
         run: |
           npm run test:example
           node scripts/validate-sigma-dex-pack.mjs examples/sigma-dex-example-music.zip
+      - name: Quantitative audio benchmark versus v1.7.1 baseline
+        run: npm run test:audio:benchmark
+      - name: Strict timing benchmark with blind reference scores
+        run: npm run test:audio:arranger-timing
+      - name: Independent Python Nitro SSEQ parser
+        run: python3 tests/independent_sseq_reader.py
       - name: Browser-runner timeout and subprocess cleanup regression
         run: python3 tests/test_runner_timeout.py
   browser:
@@ -59,7 +67,11 @@ jobs:
           - browser_sseq_upload_pipeline.py
           - browser_upload_recovery.py
           - browser_upload_dialog.py
+          - browser_midi_five.py
           - browser_catalog_integrity.py
+          - browser_hg39_catalog.py
+          - browser_all_instruments.py
+          - browser_multi_midi.py
           - browser_sprite_visibility.py
           - browser_sigma_export.py
           - browser_sseq_conversion.py
@@ -67,6 +79,15 @@ jobs:
           - browser_transcription_worker.py
           - browser_progress_health.py
           - browser_status.py
+          - browser_exports.py
+          - browser_qc5.py
+          - browser_qc7.py
+          - browser_upload_cancel.py
+          - browser_song_deletion.py
+          - browser_polyphonic_filepicker.py
+          - browser_song_arranger.py
+          - browser_arranger_controls.py
+          - browser_five_minute_import.py
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -81,6 +102,14 @@ jobs:
         run: |
           python -m pip install playwright pillow
           python -m playwright install --with-deps chromium
+      - name: Ensure MP3 test codec in browser job
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v ffmpeg >/dev/null 2>&1 || ! ffmpeg -hide_banner -encoders 2>/dev/null | grep -F 'libmp3lame' >/dev/null; then
+            sudo apt-get update -qq
+            sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg libavcodec-extra
+          fi
       - name: Run isolated browser regression with bounded runtime
         env:
           SIGMA_BROWSER_USE_REAL_CRYPTO: '1'

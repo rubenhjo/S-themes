@@ -59,12 +59,16 @@ async def test_scenario(browser, mode):
  await page.wait_for_function('SigmaDebug.state.ready===true',timeout=10000)
  song=str(ROOT/'tests/fixtures/melody.sseq')
  await page.locator('#fileInput').set_input_files(song)
+ await page.locator('#confirmSseqUpload').wait_for(timeout=15000)
+ await page.locator('#confirmSseqUpload').click()
  await page.wait_for_function('window.__qa.finishes===1',timeout=20000)
  if mode=='finish-failed':
   await page.wait_for_function('SigmaDebug.state.busy===false',timeout=10000)
   first=await page.evaluate('({starts:__qa.starts,puts:__qa.puts,finishes:__qa.finishes})')
   assert first=={'starts':1,'puts':1,'finishes':1},first
   await page.locator('#fileInput').set_input_files(song)
+  await page.locator('#confirmSseqUpload').wait_for(timeout=15000)
+  await page.locator('#confirmSseqUpload').click()
   await page.wait_for_function('window.__qa.finished===true',timeout=20000)
   after=await page.evaluate('({starts:__qa.starts,puts:__qa.puts,finishes:__qa.finishes,statusCalls:__qa.statusCalls})')
   assert after['starts']==1 and after['puts']==1 and after['finishes']==2 and after['statusCalls']>=1,after

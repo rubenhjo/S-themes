@@ -1,0 +1,596 @@
+{
+  "library": "librosa 0.11.0",
+  "algorithm": "YIN mono + RMS silence gate",
+  "summary": {
+    "lenient": {
+      "tp": 18,
+      "fp": 28,
+      "fn": 72,
+      "precision": 0.391304347826087,
+      "recall": 0.2,
+      "f1": 0.2647058823529412
+    },
+    "strict": {
+      "tp": 4,
+      "fp": 42,
+      "fn": 86,
+      "precision": 0.08695652173913043,
+      "recall": 0.044444444444444446,
+      "f1": 0.058823529411764705
+    },
+    "processing_ms_total": 76.43,
+    "rss_kib_peak": 376500
+  },
+  "rows": [
+    {
+      "case": "four-note chord",
+      "codec": "wav",
+      "notes": [],
+      "milliseconds": 3.14,
+      "rss_kib_before": 374836,
+      "rss_kib_after": 374836,
+      "lenient": [
+        0,
+        0,
+        4
+      ],
+      "strict": [
+        0,
+        0,
+        4
+      ]
+    },
+    {
+      "case": "four-note chord",
+      "codec": "mp3",
+      "notes": [],
+      "milliseconds": 2.9,
+      "rss_kib_before": 374836,
+      "rss_kib_after": 374836,
+      "lenient": [
+        0,
+        0,
+        4
+      ],
+      "strict": [
+        0,
+        0,
+        4
+      ]
+    },
+    {
+      "case": "six-note chord",
+      "codec": "wav",
+      "notes": [
+        {
+          "pitch": 48,
+          "start": 0.09287981859410431,
+          "duration": 0.13931972789115646
+        },
+        {
+          "pitch": 40,
+          "start": 0.5572789115646258,
+          "duration": 0.46439909297052157
+        }
+      ],
+      "milliseconds": 3.03,
+      "rss_kib_before": 374836,
+      "rss_kib_after": 374836,
+      "lenient": [
+        0,
+        2,
+        6
+      ],
+      "strict": [
+        0,
+        2,
+        6
+      ]
+    },
+    {
+      "case": "six-note chord",
+      "codec": "mp3",
+      "notes": [
+        {
+          "pitch": 48,
+          "start": 0.09287981859410431,
+          "duration": 0.13931972789115646
+        },
+        {
+          "pitch": 40,
+          "start": 0.5572789115646258,
+          "duration": 0.46439909297052157
+        }
+      ],
+      "milliseconds": 2.92,
+      "rss_kib_before": 374836,
+      "rss_kib_after": 374836,
+      "lenient": [
+        0,
+        2,
+        6
+      ],
+      "strict": [
+        0,
+        2,
+        6
+      ]
+    },
+    {
+      "case": "strong harmonics",
+      "codec": "wav",
+      "notes": [
+        {
+          "pitch": 57,
+          "start": 0.023219954648526078,
+          "duration": 1.0681179138321997
+        }
+      ],
+      "milliseconds": 2.76,
+      "rss_kib_before": 374836,
+      "rss_kib_after": 374836,
+      "lenient": [
+        1,
+        0,
+        0
+      ],
+      "strict": [
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "case": "strong harmonics",
+      "codec": "mp3",
+      "notes": [
+        {
+          "pitch": 57,
+          "start": 0.023219954648526078,
+          "duration": 1.0681179138321997
+        }
+      ],
+      "milliseconds": 3.57,
+      "rss_kib_before": 374836,
+      "rss_kib_after": 374836,
+      "lenient": [
+        1,
+        0,
+        0
+      ],
+      "strict": [
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "case": "eight-note chord",
+      "codec": "wav",
+      "notes": [
+        {
+          "pitch": 40,
+          "start": 0.11609977324263039,
+          "duration": 1.0216780045351475
+        }
+      ],
+      "milliseconds": 3.13,
+      "rss_kib_before": 374836,
+      "rss_kib_after": 374836,
+      "lenient": [
+        0,
+        1,
+        8
+      ],
+      "strict": [
+        0,
+        1,
+        8
+      ]
+    },
+    {
+      "case": "eight-note chord",
+      "codec": "mp3",
+      "notes": [
+        {
+          "pitch": 40,
+          "start": 0.11609977324263039,
+          "duration": 1.0216780045351475
+        }
+      ],
+      "milliseconds": 6.65,
+      "rss_kib_before": 374836,
+      "rss_kib_after": 374836,
+      "lenient": [
+        0,
+        1,
+        8
+      ],
+      "strict": [
+        0,
+        1,
+        8
+      ]
+    },
+    {
+      "case": "four C4 repeats",
+      "codec": "wav",
+      "notes": [
+        {
+          "pitch": 60,
+          "start": 0.046439909297052155,
+          "duration": 0.46439909297052157
+        },
+        {
+          "pitch": 60,
+          "start": 0.5572789115646258,
+          "duration": 0.44117913832199546
+        },
+        {
+          "pitch": 60,
+          "start": 1.0448979591836736,
+          "duration": 0.46439909297052157
+        },
+        {
+          "pitch": 60,
+          "start": 1.5557369614512473,
+          "duration": 0.44117913832199546
+        }
+      ],
+      "milliseconds": 4.95,
+      "rss_kib_before": 374836,
+      "rss_kib_after": 375092,
+      "lenient": [
+        4,
+        0,
+        0
+      ],
+      "strict": [
+        0,
+        4,
+        4
+      ]
+    },
+    {
+      "case": "four C4 repeats",
+      "codec": "mp3",
+      "notes": [
+        {
+          "pitch": 60,
+          "start": 0.046439909297052155,
+          "duration": 0.46439909297052157
+        },
+        {
+          "pitch": 60,
+          "start": 0.5572789115646258,
+          "duration": 0.44117913832199546
+        },
+        {
+          "pitch": 60,
+          "start": 1.0448979591836736,
+          "duration": 0.46439909297052157
+        },
+        {
+          "pitch": 60,
+          "start": 1.5557369614512473,
+          "duration": 0.44117913832199546
+        }
+      ],
+      "milliseconds": 4.9,
+      "rss_kib_before": 375092,
+      "rss_kib_after": 375092,
+      "lenient": [
+        4,
+        0,
+        0
+      ],
+      "strict": [
+        0,
+        4,
+        4
+      ]
+    },
+    {
+      "case": "E2-G2-A2-E2 bass",
+      "codec": "wav",
+      "notes": [
+        {
+          "pitch": 40,
+          "start": 0.11609977324263039,
+          "duration": 0.6501587301587302
+        },
+        {
+          "pitch": 43,
+          "start": 0.8126984126984127,
+          "duration": 0.626938775510204
+        },
+        {
+          "pitch": 45,
+          "start": 1.486077097505669,
+          "duration": 0.6501587301587302
+        },
+        {
+          "pitch": 40,
+          "start": 2.159455782312925,
+          "duration": 0.626938775510204
+        }
+      ],
+      "milliseconds": 6.7,
+      "rss_kib_before": 375092,
+      "rss_kib_after": 376500,
+      "lenient": [
+        4,
+        0,
+        0
+      ],
+      "strict": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "case": "E2-G2-A2-E2 bass",
+      "codec": "mp3",
+      "notes": [
+        {
+          "pitch": 40,
+          "start": 0.11609977324263039,
+          "duration": 0.6501587301587302
+        },
+        {
+          "pitch": 43,
+          "start": 0.8126984126984127,
+          "duration": 0.626938775510204
+        },
+        {
+          "pitch": 45,
+          "start": 1.486077097505669,
+          "duration": 0.6501587301587302
+        },
+        {
+          "pitch": 40,
+          "start": 2.159455782312925,
+          "duration": 0.626938775510204
+        }
+      ],
+      "milliseconds": 7.79,
+      "rss_kib_before": 376500,
+      "rss_kib_after": 376500,
+      "lenient": [
+        4,
+        0,
+        0
+      ],
+      "strict": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "case": "melody after 350ms silence",
+      "codec": "wav",
+      "notes": [
+        {
+          "pitch": 55,
+          "start": 0.2786394557823129,
+          "duration": 0.46439909297052157
+        },
+        {
+          "pitch": 50,
+          "start": 0.9287981859410431,
+          "duration": 0.37151927437641724
+        },
+        {
+          "pitch": 53,
+          "start": 1.3699773242630386,
+          "duration": 0.37151927437641724
+        },
+        {
+          "pitch": 72,
+          "start": 1.7414965986394557,
+          "duration": 0.16253968253968254
+        }
+      ],
+      "milliseconds": 4.78,
+      "rss_kib_before": 376500,
+      "rss_kib_after": 376500,
+      "lenient": [
+        0,
+        4,
+        6
+      ],
+      "strict": [
+        0,
+        4,
+        6
+      ]
+    },
+    {
+      "case": "melody after 350ms silence",
+      "codec": "mp3",
+      "notes": [
+        {
+          "pitch": 55,
+          "start": 0.2786394557823129,
+          "duration": 0.46439909297052157
+        },
+        {
+          "pitch": 50,
+          "start": 0.9287981859410431,
+          "duration": 0.37151927437641724
+        },
+        {
+          "pitch": 53,
+          "start": 1.3699773242630386,
+          "duration": 0.37151927437641724
+        },
+        {
+          "pitch": 72,
+          "start": 1.7414965986394557,
+          "duration": 0.16253968253968254
+        }
+      ],
+      "milliseconds": 5.03,
+      "rss_kib_before": 376500,
+      "rss_kib_after": 376500,
+      "lenient": [
+        0,
+        4,
+        6
+      ],
+      "strict": [
+        0,
+        4,
+        6
+      ]
+    },
+    {
+      "case": "heldout staggered six instruments",
+      "codec": "wav",
+      "notes": [
+        {
+          "pitch": 45,
+          "start": 0.046439909297052155,
+          "duration": 0.16253968253968254
+        },
+        {
+          "pitch": 56,
+          "start": 0.37151927437641724,
+          "duration": 0.11609977324263039
+        },
+        {
+          "pitch": 57,
+          "start": 0.5108390022675737,
+          "duration": 0.13931972789115646
+        },
+        {
+          "pitch": 54,
+          "start": 0.8126984126984127,
+          "duration": 0.25541950113378686
+        },
+        {
+          "pitch": 45,
+          "start": 1.0681179138321997,
+          "duration": 0.18575963718820862
+        },
+        {
+          "pitch": 45,
+          "start": 1.3467573696145125,
+          "duration": 0.16253968253968254
+        }
+      ],
+      "milliseconds": 3.91,
+      "rss_kib_before": 376500,
+      "rss_kib_after": 376500,
+      "lenient": [
+        0,
+        6,
+        6
+      ],
+      "strict": [
+        0,
+        6,
+        6
+      ]
+    },
+    {
+      "case": "heldout staggered six instruments",
+      "codec": "mp3",
+      "notes": [
+        {
+          "pitch": 45,
+          "start": 0.046439909297052155,
+          "duration": 0.16253968253968254
+        },
+        {
+          "pitch": 56,
+          "start": 0.37151927437641724,
+          "duration": 0.11609977324263039
+        },
+        {
+          "pitch": 57,
+          "start": 0.5108390022675737,
+          "duration": 0.13931972789115646
+        },
+        {
+          "pitch": 54,
+          "start": 0.8126984126984127,
+          "duration": 0.25541950113378686
+        },
+        {
+          "pitch": 45,
+          "start": 1.0681179138321997,
+          "duration": 0.18575963718820862
+        },
+        {
+          "pitch": 45,
+          "start": 1.3467573696145125,
+          "duration": 0.16253968253968254
+        }
+      ],
+      "milliseconds": 3.98,
+      "rss_kib_before": 376500,
+      "rss_kib_after": 376500,
+      "lenient": [
+        0,
+        6,
+        6
+      ],
+      "strict": [
+        0,
+        6,
+        6
+      ]
+    },
+    {
+      "case": "heldout dense chord",
+      "codec": "wav",
+      "notes": [
+        {
+          "pitch": 38,
+          "start": 0.23219954648526078,
+          "duration": 0.905578231292517
+        }
+      ],
+      "milliseconds": 3.31,
+      "rss_kib_before": 376500,
+      "rss_kib_after": 376500,
+      "lenient": [
+        0,
+        1,
+        6
+      ],
+      "strict": [
+        0,
+        1,
+        6
+      ]
+    },
+    {
+      "case": "heldout dense chord",
+      "codec": "mp3",
+      "notes": [
+        {
+          "pitch": 38,
+          "start": 0.23219954648526078,
+          "duration": 0.905578231292517
+        }
+      ],
+      "milliseconds": 2.98,
+      "rss_kib_before": 376500,
+      "rss_kib_after": 376500,
+      "lenient": [
+        0,
+        1,
+        6
+      ],
+      "strict": [
+        0,
+        1,
+        6
+      ]
+    }
+  ]
+}

@@ -31,7 +31,7 @@ async def main():
     const pending=a.play();
     await Promise.resolve();
     a.pause();finish();await pending;
-    results.pause_during_fetch=a.paused&&!a._audioCtx&&a.currentTime===0;
+    results.pause_during_fetch=a.paused&&!a._playing&&a.currentTime===0&&a._nodes.size===0;
     a.dispose();
     // 2. Changing source invalidates the first loading promise.
     let finishFirst;
@@ -39,7 +39,7 @@ async def main():
     const b=new SigmaSeqAudio();b.slot=1028;b.src='old.sseq';
     const oldPlay=b.play().then(()=>true,()=>false);
     await Promise.resolve();b.src='new.sseq';finishFirst();await oldPlay;
-    results.old_source_never_plays=b.paused && b.src==='new.sseq' && !b._audioCtx;
+    results.old_source_never_plays=b.paused && b.src==='new.sseq' && b._nodes.size===0;
     b.dispose();
     // 3. Real SSEQ plays and can be paused after decoding.
     window.fetch=originalFetch;

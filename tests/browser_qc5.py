@@ -173,49 +173,48 @@ async def cancel_stale_catalog(browser):
     await page.close();return {'aborted_before_pageshow':1,'latest_catalog_after_reconnect':'after-reconnect'}
 
 async def ds_parts(browser):
+    """SSEQ-only replacement of legacy WAV/DS partition test."""
     page=await browser.new_page()
     errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-    # Use the existing browser's real ZIP implementation; only the audio input is mocked.
-    await page.evaluate('''(() => {
-      const mem=new Map(),storage={getItem:k=>mem.has(k)?mem.get(k):null,setItem:(k,v)=>mem.set(k,String(v)),removeItem:k=>mem.delete(k)};
+    await page.evaluate('''() => {
+      const mem=new Map(),storage={getItem:k=>mem.get(k)||null,setItem:(k,v)=>mem.set(k,String(v)),removeItem:k=>mem.delete(k)};
       Object.defineProperty(window,'localStorage',{value:storage,configurable:true});
       Object.defineProperty(window,'crypto',{value:{subtle:{digest:async()=>new Uint8Array(32).fill(7).buffer},randomUUID:()=>String(Math.random())},configurable:true});
-      window.__audioBytes=new Uint8Array(64);window.__audioBytes.set([73,68,51]);
-      const originalFetch=window.fetch;window.fetch=async url=>{
-        if(String(url).startsWith('blob:'))return originalFetch(url);
+      window.__audioBytes=new Uint8Array();const oldFetch=window.fetch;
+      window.fetch=async url=>{
+        if(String(url).startsWith('blob:'))return oldFetch(url);
         if(String(url).includes('/api/config'))return Response.json({ready:true});
         if(String(url).includes('/api/catalog'))return Response.json({tracks:[]});
-        if(String(url).includes('/api/audio'))return new Response(window.__audioBytes,{status:200,headers:{'content-length':'64'}});
-        throw Error('Unexpected request '+url)
+        if(String(url).includes('/api/audio'))return new Response(window.__audioBytes,{status:200,headers:{'content-length':String(window.__audioBytes.length)}});
+        throw Error('Unexpected request '+url);
       };
-      window.confirm=()=>true;
-    })()''')
-    await page.set_content(fixture(),wait_until='domcontentloaded')
-    await page.evaluate('''() => {
-      SigmaDebug.state.tracks=['a','b','c'].map((id,i)=>({id,title:'Song '+id,artist:'Artist',original_filename:'song.mp3',sha256:'07'.repeat(32),size_bytes:64,duration_s:1,created_at:'2026-11-14'}));
-      SigmaDS.convert=async()=>SigmaDS.encodeImaWav([new Float32Array(600),new Float32Array(600)],32728,true);
-      SigmaCore.partitionDS=(files)=>files.map(f=>[f]);
     }''')
-    await page.evaluate('SigmaDebug.openExportPicker("ds")')
+    await page.set_content(fixture(),wait_until='domcontentloaded')
+    from browser_public import ROOT
+    sample=list((ROOT/'tests/fixtures/melody.sseq').read_bytes())
+    await page.evaluate('''bytes=>{
+      window.__audioBytes=Uint8Array.from(bytes);
+      SigmaDebug.state.tracks=['a','b','c'].map((id,i)=>({id,title:'Song '+id,artist:'Artist',sseq_id:1028,original_filename:'song.sseq',sha256:'07'.repeat(32),size_bytes:bytes.length,duration_s:2,created_at:'2026-11-14'}));
+      SigmaCore.partition=tracks=>tracks.map(t=>[t]);
+    }''',sample)
+    await page.evaluate('SigmaDebug.openExportPicker("backup")')
     await page.locator('#beginExport').click()
-    await page.wait_for_function('document.querySelectorAll("#modalRoot a[download]").length===3',timeout=15000)
+    await page.wait_for_function('document.querySelectorAll("#modalRoot a[download]").length===3',timeout=20000)
     checks=await page.evaluate('''async () => {
       const results=[];
       for(const a of document.querySelectorAll('#modalRoot a[download]')){
         const zip=await(await fetch(a.href)).blob();await SigmaDS.verifyZip(zip);
         const entries=await SigmaDS.unzip(zip);
-        const manifest=JSON.parse(await entries.get('manifest.json').text());
-        const overview=JSON.parse(await entries.get('export-overview.json').text());
-        const csv=await entries.get('sequence-map.csv').text();
-        const names=[...entries.keys()].filter(n=>n.endsWith('.wav'));
-        if(manifest.tracks.length!==1 || names.length!==1 || names[0]!==manifest.tracks[0].file || !csv.includes(manifest.tracks[0].id))throw Error('Wrong part content');
-        if(manifest.total_parts!==3||overview.tracks.length!==3||overview.export_id!==manifest.export_id)throw Error('Incomplete part metadata');
-        results.push({part:manifest.part,id:manifest.tracks[0].id,sha:manifest.tracks[0].output_sha256,names});
+        const m=JSON.parse(await entries.get('sigma-library.json').text());
+        const names=[...entries.keys()].filter(n=>n.endsWith('.sseq'));
+        if(m.tracks.length!==1 || names.length!==1 || names[0]!==m.tracks[0].backup_path)throw Error('Wrong SSEQ backup part');
+        if(m.total_parts!==3)throw Error('Incomplete split backup metadata');
+        results.push({part:m.part,id:m.tracks[0].id,sha:m.tracks[0].sha256,names});
       }
       return results;
     }''')
     assert [x['id'] for x in checks]==['a','b','c'],checks
-    assert len({x['sha'] for x in checks})==1  # intentionally identical synthetic audio
+    assert len({x['sha'] for x in checks})==1  # distinct catalog IDs, same bytes
     assert not errors,errors
     await page.close();return checks
 

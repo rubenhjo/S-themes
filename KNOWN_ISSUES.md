@@ -893,20 +893,174 @@ Status kan være OPEN, IN PROGRESS, FIXED – NOT VERIFIED, VERIFIED, BLOCKED el
 - **Evidence:** PASS kontrollert oversize-avvisning før kildebytes leses; NOT TESTED faktisk lang fil på fysisk mobil.
 - **Remaining limitations:** Må måle 1–6 minutters dekoding, Worker-kjøreytelse, mobil-RAM og opplastingsbruk.
 
+### ST-062 — Tomt, men gyldig Game Boy-SWAR ble avvist
+
+- **Severity:** P1
+- **Status:** VERIFIED
+- **Discovered:** 2026-11-16
+- **Reproduction:** Importer de 78 private SBNK/SWAR-filene fra HeartGold US; `SWAR/701_WAVE_ARC_GAMEBOY.swar` er 60 byte, sample count 0, og ble tidligere avvist av kravet om minst 0x40 byte.
+- **Impact:** Importkatalogen rapporterte én feil, selv om det ikke finnes PCM-samples i dette arkivet.
+- **Affected files:** `heartgold_source_audio.js`
+- **Root cause:** Tom SWAR har gyldig 0x3c-byte DATA-struktur og null tabelloppføringer.
+- **Change:** Godta tomme arkiver med gyldig header og null wave-offsets; behold streng validering for ikke-tomme arkiver.
+- **Regression test:** `tests/heartgold-sample-voice.test.js` og lokal verifisering av originalarkivet.
+- **Evidence:** PASS — 39/39 SBNK og 39/39 SWAR kontrollert mot SHA-256; 78 vellykkede importer; 506 gyldige PCM-regionoppslag.
+- **Remaining limitations:** Resultatene gjelder lokal originalpakke, ikke identisk samplegjengivelse mot DS-maskinvare.
+
+### ST-063 — Delvis rettet harmonisk akkordtap; generell polyfoni fortsatt åpen
+
+- **Severity:** P1
+- **Status:** OPEN
+- **Discovered:** 2026-11-16
+- **Reproduction:** Kjør 1.7.2 baseline av C3/E3/G3/C4/E4/G4 med WAV/MP3: tre oktavtoner mistes ved spektral filtrering; 1.7.3 gjenvinner alle seks på dette kontrollopptaket, men annet miksinnhold er fortsatt ufullstendig.
+- **Impact:** Kompleks polyfonisk WAV/MP3 kan miste egne stemmer selv om SSEQ-formatet støtter dem.
+- **Affected files:** `sseq_transcribe.js, sseq_transcribe_worker.js`
+- **Root cause:** Overlappende oktaver og instrumentovertoner er delvis akustisk tvetydige uten eksplisitt polyfon modell og selvstendig onset-informasjon.
+- **Change:** Ny to-øvre-partial-test støtter reelle harmonisk overlappende oktavtoner; ren overtone-solo kontrolleres samtidig. Full instrumentseparasjon er ikke integrert.
+- **Regression test:** `tests/audio-benchmark.mjs`, `tests/polyphony-preservation.test.js`, `tests/polyphonic-benchmark.mjs`, `tests/browser_polyphonic_filepicker.py`.
+- **Evidence:** PASS fire/seks/åtte-tone additive chord WAV+MP3 across spectral/lanes/export; FAIL on delayed/staggered/real-mix timing, with strict 50ms heldout F1 0.56.
+- **Remaining limitations:** Krever validerte fler-instrument lydopptak, bedre note-separasjon og menneskelig fasit før kvalitetsgodkjenning.
+
+### ST-064 — Slettemigrasjonen mangler i tilkoblet produksjonsdatabase
+
+- **Severity:** P1
+- **Status:** BLOCKED
+- **Discovered:** 2026-11-16
+- **Reproduction:** Les bare prosjektets migrasjonshistorikk og `public.theme_tracks` kolonner; `deleted_at` og `storage_deleted_at` mangler.
+- **Impact:** v1.7.1+ sletting kan ikke antas å virke på den eksisterende produksjonsdatabasen.
+- **Affected files:** `supabase/migrations/20261116_song_deletion.sql, DEPLOYMENT.md`
+- **Root cause:** Migrasjonen er inkludert i ZIP, men ikke kjørt i den tilkoblede databasen.
+- **Change:** Eksplisitt produksjonsblokkerende deploy-sjekkliste med staging, backup, RLS og idempotent cleanup, uten å mutere ekte data.
+- **Regression test:** `tests/song-deletion.test.js`, `tests/browser_song_deletion.py`; staging-test gjenstår.
+- **Evidence:** Read-only Supabase metadata: ingen slettingskolonner; mock-API og Chromium PASS, men live = NOT TESTED.
+- **Remaining limitations:** Krever sikker staging-tilgang, backup, anvendt migrasjon og faktisk ende-til-ende test.
+
+### ST-065 — Databasen avviser separate sanger med identisk SHA og game slot
+
+- **Severity:** P0
+- **Status:** FIXED – NOT VERIFIED
+- **Discovered:** 2026-11-16, read-only Supabase inspection of actual S-themes project.
+- **Reproduction:** Installed `theme_tracks_sha_slot` is UNIQUE; installed `reserve_theme_upload_for_slot` checks both published and queued SHA+slot and raises `Duplicate audio checksum`.
+- **Impact:** Independent uploads with different song IDs/titles but equal sound bytes and slot cannot coexist.
+- **Affected files:** `supabase/migrations/20261116_distinct_sseq_submissions.sql, api/upload-start.js`
+- **Root cause:** Schema and RPC preserve old content deduplication, conflicting with identity-by-upload-ID semantics.
+- **Change:** Added non-destructive staging-first migration dropping unique SHA+slot, replacing it with nonunique lookup, and removing only SHA duplicate gates; existing 30/100/500 quotas, 1500 capacity, per-ID paths and server-only execute grants remain.
+- **Regression test:** `tests/distinct-submit-migration.test.js`, browser upload recovery suite (mock).
+- **Evidence:** PASS structural SQL guard, PASS read-only production diagnosis; NOT TESTED applying migration, concurrent independent submissions or retry against staging PostgreSQL.
+- **Remaining limitations:** Do not apply to production without backup and staging validation; older SHA uniqueness on NULL-slot legacy rows is intentionally retained.
+
+### ST-066 — Streng note-onset og -offset fremdeles upresis i forskjøvne stemmer
+
+- **Severity:** P1
+- **Status:** OPEN
+- **Discovered:** 2026-11-16, 18-case MIDI-grounded WAV/MP3 polyphonic benchmark.
+- **Reproduction:** Frozen v1.7.3 delayed melody and staggered six-instrument fixtures failed 50ms onset tests; the v1.7.4 targeted equivalents now pass, but truly unseen multi-instrument scenarios still have false notes/offset errors.
+- **Impact:** A correct pitch-class list can still sound rhythmically wrong.
+- **Affected files:** `sseq_transcribe.js, sigma_note_refine.js, tests/polyphonic-benchmark.mjs, tests/timing-acceptance.mjs`
+- **Root cause:** Framewise 2048-bin harmonic estimates blur rapid attacks/offsets; frame-to-frame note lanes are not yet independently onset-tracked.
+- **Change:** Bounded FFT look-ahead onset correction and short-window demodulation adjust start/stop times, join split tails, preserve optional uncertain candidates for song-local manual review. Known WAV/MP3 strict cases improve to 6/0/0.
+- **Regression test:** `tests/polyphonic-benchmark.mjs`, `tests/timing-acceptance.mjs`, `tests/browser_polyphonic_filepicker.py`, `tests/browser_arranger_controls.py`.
+- **Evidence:** PASS 18 known WAV/MP3 strict trials 90/0/0 and two originally failing six-note cases each 6/0/0; PASS 18 file chooser conversions; three new uninfluenced synthetic references yield 16 TP, 3 FP, 1 FN (F1 88.9%): no general musical PASS.
+- **Remaining limitations:** Better music-generalized onset separation and human-annotated real audio remain required; private Cute melody spectral selection can still drop genuine candidates (ST-070).
+
+### ST-067 — GitHub main og fysisk HeartGold-integrasjon kan ikke kontrolleres her
+
+- **Severity:** P1
+- **Status:** BLOCKED
+- **Discovered:** 2026-11-16, final comparison request.
+- **Reproduction:** `git ls-remote https://github.com/rubenhjo/S-themes HEAD` failed due DNS/network restrictions; same URL unavailable from web; no authorized private HeartGold ROM/Sigma Dex importer executable or physical iPhone.
+- **Impact:** The ZIP cannot be truthfully described as merged against latest GitHub main or native-game-tested.
+- **Affected files:** `DEPLOYMENT.md, HEARTGOLD_COMPATIBILITY.md`
+- **Root cause:** Network/access and required local hardware/software resources are missing.
+- **Change:** Work based on complete v1.7.2 source ZIP, preservation tests and precise NOT TESTED instructions; no production deploy claimed.
+- **Regression test:** `tests/external_ndspy_optional.py`, existing independent Python reader, SSEQ upload tests.
+- **Evidence:** PASS v1.7.2 local base and independent internal Python reader; NOT TESTED live GitHub main, ndspy, Sigma Dex importer, private ROM and iPhone hardware.
+- **Remaining limitations:** Compare committed SHA/merge in connected GitHub environment, install ndspy, and perform lawful manual game/emulator/iPhone verification.
+
+### ST-068 — Supabase Preview/staging Ende-zu-Ende er ikke gjennomført
+
+- **Severity:** P1
+- **Status:** BLOCKED
+- **Discovered:** 2026-11-16, production data safety review.
+- **Reproduction:** The connected project is the live `S-themes` instance and has 8 music rows and 8 uploads; no independently configured staging Supabase project or Vercel Preview deployment is accessible.
+- **Impact:** Turnstile, SQL migration compatibility, two independent SHA-equal uploads, signed URL expiry and tombstone deletion are not proven in deployment.
+- **Affected files:** `supabase/migrations/, api/, DEPLOYMENT.md`
+- **Root cause:** No staging credentials, Preview configuration or backup that authorizes invasive tests; production songs must not be modified.
+- **Change:** Prepared staging-first SQL migration and environment-safe test commands; limited production inspection to read-only queries.
+- **Regression test:** `tests/staging_smoke.py` only when a separate project is actually configured.
+- **Evidence:** PASS read-only index/function inspection; NOT TESTED real staging database or Vercel Preview workflows.
+- **Remaining limitations:** Provision isolated Supabase staging and Preview, backup source schema, apply migrations there, run two-browser upload/delete/retry/expiry matrix, then plan production rollout.
+
+### ST-069 — Arranger sangen must preserve individual note edits and actual SSEQ bytes
+
+- **Severity:** P1
+- **Status:** VERIFIED
+- **Discovered:** 2026-11-16 v1.7.4 feature acceptance.
+- **Reproduction:** WAV/MP3 through ordinary file chooser, melody/bass/chord track controls, select one repeated attack, preview final SSEQ, submit through mock upload.
+- **Impact:** Without per-event identities and a final-byte cache, edits may disappear, five parts could truncate chords, or preview might differ from exported track.
+- **Affected files:** `sigma_arranger.js, sigma_arranger_ui.js, app.js, sseq_transcribe.js`.
+- **Root cause:** v1.7.3 had no song-local editable post-transcription arrangement model.
+- **Change:** Added five-part maximum independent of voice polyphony, keyed note exclusion/undo, per-part program/velocity/flag/filter, original vs SSEQ preview and distinct listening/export loops; default Auto accepts SSEQ-only.
+- **Regression test:** `tests/song-arranger.test.js`, `tests/browser_song_arranger.py`, `tests/browser_arranger_controls.py`.
+- **Evidence:** PASS local Node SSEQ parse and Chromium WAV+MP3 with mocked publication bytes, eight simultaneous notes and program/velocity override; actual server deployment NOT TESTED.
+- **Remaining limitations:** This VERIFIED status applies only to the local controls and mock-server export; no iPhone or real Vercel/Supabase claim.
+
+### ST-070 — Private Cute melody can lose real notes under conservative refinement
+
+- **Severity:** P1
+- **Status:** OPEN
+- **Discovered:** 2026-11-16 local private M4A analysis with identical 7.744-second source.
+- **Reproduction:** Frozen v1.7.3 spectral notes gave 22 events; new automatic refined layer gave 14 events. A short MIDI 44 at approximately 7.36s was rejected by the original onset shift and was not otherwise accessible.
+- **Impact:** A real bass/low tone or quiet note may be missing from one-tap Auto; synthetic F1 alone does not warrant a claim of general quality.
+- **Affected files:** `sseq_transcribe.js, sigma_note_refine.js, sigma_arranger.js, sigma_arranger_ui.js`.
+- **Root cause:** Frame duration was shortened too aggressively by onset look-ahead; refiner can also suppress uncertain partial-supported notes on real polyphonic recordings.
+- **Change:** Short notes now lose no more than 25% of their detected duration to look-ahead; preserve non-selected spectral hypotheses under opt-in per-song 'Ta med flere mulige toner', including a potential MIDI 44 near the ending.
+- **Regression test:** `tests/timing-acceptance.mjs`, `tests/song-arranger.test.js`; private data separately analyzed but excluded from public artifacts.
+- **Evidence:** PASS deterministic known+blind synthetic benchmark; PASS private spectral candidate observation (MIDI44 at ~7.38s). NOT a musical ground-truth PASS for Cute melody.
+- **Remaining limitations:** Need independent MIDI/human note truth for the entire original recording, especially near 3.18, 6.52 and 7.36s.
+
+### ST-071 — Nonunique pending SQL migration naming and replay safety
+
+- **Severity:** P1
+- **Status:** FIXED – NOT VERIFIED
+- **Discovered:** 2026-11-16 staging migration layout review.
+- **Reproduction:** Two prior pending SQL files carried an identical `20261116` prefix and historical files in the active directory could be replayed into the deployed schema.
+- **Impact:** Migration CLI might reject version duplicates or overwrite previously installed database functions; published catalog must not be risked.
+- **Affected files:** `supabase/migrations/, docs/legacy_migrations/, DEPLOYMENT.md`.
+- **Root cause:** Pending filenames were not migration-version unique and the repository retained old SQL fixtures among new pending DDL.
+- **Change:** Unique pending version prefixes 20261116220000 and 20261116221000, original SQL archived unmodified for historical review and regression tests; staged deployment plan documents baseline requirement.
+- **Regression test:** `tests/distinct-submit-migration.test.js`, `tests/song-deletion.test.js`, `node scripts/check-release-layout.mjs`.
+- **Evidence:** PASS Node structural SQL tests and two distinct active migration version prefixes. NOT TESTED applying migrations to isolated copy of actual production schema.
+- **Remaining limitations:** Staging Supabase clone, safe backup and actual Vercel Preview integration unavailable. Never use production for exploratory migration tests.
+
+### ST-072 — Femminutters lydredigering hadde kvadratisk ytelse og ubegrenset notegrafikk
+
+- **Severity:** P1
+- **Status:** VERIFIED
+- **Discovered:** 2026-11-17, user requested songs up to five minutes.
+- **Reproduction:** Arrange thousands of note events, with every note comparing overlap to every other note; the old UI rendered all note buttons across the entire 300-second recording.
+- **Impact:** Mobile browser could become unresponsive during long recordings, and notes in a 5-minute full-width view were impractical to edit accurately.
+- **Affected files:** `sigma_arranger.js, sigma_arranger_ui.js, tests/five-minute-arranger.test.js, tests/browser_five_minute_import.py`.
+- **Root cause:** O(n²) concurrency counting, duplicate program-range checks on repeated pitches and an unbounded full-song note DOM.
+- **Change:** O(n log n) active end-time min heap, unique-pitch checks, 15-second editable windows (max 240 visible note controls per part), previous/next navigation while retaining every note for export.
+- **Regression test:** `node --test tests/five-minute-arranger.test.js`, `python tests/browser_five_minute_import.py`.
+- **Evidence:** PASS locally on 8,000-note stress model (15.4 ms), 300-second 44.1 kHz stereo WAV (52.9 MB) and MP3 (7.2 MB) real-browser conversions, independent 150-note pitch+timing check, single valid SSEQ mock submission each. No staging verification.
+- **Remaining limitations:** Verified local browser performance and simple synthetic music only; physical iPhone, real production uploads, dense music reliability and Native HeartGold game playback NOT TESTED.
+
 ## QC7 issue status — generated
 
 | Severity | OPEN | IN PROGRESS | FIXED – NOT VERIFIED | VERIFIED | BLOCKED | WONTFIX | Total |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| P0 | 0 | 0 | 0 | 2 | 2 | 0 | 4 |
-| P1 | 5 | 0 | 5 | 15 | 6 | 0 | 31 |
+| P0 | 0 | 0 | 1 | 2 | 2 | 0 | 5 |
+| P1 | 8 | 0 | 6 | 18 | 9 | 0 | 41 |
 | P2 | 11 | 0 | 1 | 10 | 2 | 0 | 24 |
 | P3 | 0 | 0 | 0 | 2 | 0 | 0 | 2 |
-| **Total** | 16 | 0 | 6 | 29 | 10 | 0 | **61** |
+| **Total** | 19 | 0 | 8 | 32 | 13 | 0 | **72** |
 
-- Registered: **61**
-- New since QC6: **28** (ST-034 onwards)
-- New in independent QC7 recheck: **20** (ST-042 onwards)
+- Registered: **72**
+- New since QC6: **39** (ST-034 onwards)
+- New in independent QC7 recheck: **31** (ST-042 onwards)
 - Historical ST-001–ST-033: preserved
 - Regressions detected in currently passing local tests: **0**; this does not certify untested infrastructure
 
-<!-- COUNTS {"OPEN":{"P0":0,"P1":5,"P2":11,"P3":0},"IN PROGRESS":{"P0":0,"P1":0,"P2":0,"P3":0},"FIXED – NOT VERIFIED":{"P0":0,"P1":5,"P2":1,"P3":0},"VERIFIED":{"P0":2,"P1":15,"P2":10,"P3":2},"BLOCKED":{"P0":2,"P1":6,"P2":2,"P3":0},"WONTFIX":{"P0":0,"P1":0,"P2":0,"P3":0}} -->
+<!-- COUNTS {"OPEN":{"P0":0,"P1":8,"P2":11,"P3":0},"IN PROGRESS":{"P0":0,"P1":0,"P2":0,"P3":0},"FIXED – NOT VERIFIED":{"P0":1,"P1":6,"P2":1,"P3":0},"VERIFIED":{"P0":2,"P1":18,"P2":10,"P3":2},"BLOCKED":{"P0":2,"P1":9,"P2":2,"P3":0},"WONTFIX":{"P0":0,"P1":0,"P2":0,"P3":0}} -->

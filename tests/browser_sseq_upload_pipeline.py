@@ -104,6 +104,9 @@ async def main():
    print('service ready',fname,flush=True)
    await page.locator('#fileInput').set_input_files(str(ROOT/'tests/fixtures'/fname))
    print('file selected',fname,flush=True)
+   await page.locator('#arrangeAccept').wait_for(timeout=30000)
+   assert await page.evaluate('window.__qa.starts.length')==0
+   await page.locator('#arrangeAccept').click()
    await page.wait_for_timeout(3000)
    print('after 3s',await page.evaluate('''()=>({starts:__qa.starts.length, uploads:__qa.uploads.length, finishes:__qa.finishes.length, progress:document.querySelector('#uploadProgressText')?.textContent,toast:document.querySelector('#toastRoot')?.textContent,busy:SigmaDebug.state.busy})'''), 'errors', errors,flush=True)
    await page.wait_for_function('window.__qa.finishes.length===1',timeout=50000)

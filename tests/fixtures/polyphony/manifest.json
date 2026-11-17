@@ -1,0 +1,317 @@
+[
+  {
+    "name": "four-note chord",
+    "slug": "four_note_chord",
+    "midi": "four_note_chord.mid",
+    "wav": "four_note_chord.wav",
+    "mp3": "four_note_chord.mp3",
+    "heldout": false,
+    "truth": [
+      {
+        "pitch": 48,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      },
+      {
+        "pitch": 52,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      },
+      {
+        "pitch": 55,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      },
+      {
+        "pitch": 60,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      }
+    ]
+  },
+  {
+    "name": "six-note chord",
+    "slug": "six_note_chord",
+    "midi": "six_note_chord.mid",
+    "wav": "six_note_chord.wav",
+    "mp3": "six_note_chord.mp3",
+    "heldout": false,
+    "truth": [
+      {
+        "pitch": 48,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      },
+      {
+        "pitch": 52,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      },
+      {
+        "pitch": 55,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      },
+      {
+        "pitch": 60,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      },
+      {
+        "pitch": 64,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      },
+      {
+        "pitch": 67,
+        "start": 0.11979166666666667,
+        "duration": 0.9
+      }
+    ]
+  },
+  {
+    "name": "strong harmonics",
+    "slug": "strong_harmonics",
+    "midi": "strong_harmonics.mid",
+    "wav": "strong_harmonics.wav",
+    "mp3": "strong_harmonics.mp3",
+    "heldout": false,
+    "truth": [
+      {
+        "pitch": 57,
+        "start": 0.1,
+        "duration": 0.8895833333333334
+      }
+    ]
+  },
+  {
+    "name": "eight-note chord",
+    "slug": "eight_note_chord",
+    "midi": "eight_note_chord.mid",
+    "wav": "eight_note_chord.wav",
+    "mp3": "eight_note_chord.mp3",
+    "heldout": false,
+    "truth": [
+      {
+        "pitch": 48,
+        "start": 0.16041666666666668,
+        "duration": 0.909375
+      },
+      {
+        "pitch": 52,
+        "start": 0.16041666666666668,
+        "duration": 0.909375
+      },
+      {
+        "pitch": 55,
+        "start": 0.16041666666666668,
+        "duration": 0.909375
+      },
+      {
+        "pitch": 60,
+        "start": 0.16041666666666668,
+        "duration": 0.909375
+      },
+      {
+        "pitch": 64,
+        "start": 0.16041666666666668,
+        "duration": 0.909375
+      },
+      {
+        "pitch": 67,
+        "start": 0.16041666666666668,
+        "duration": 0.909375
+      },
+      {
+        "pitch": 71,
+        "start": 0.16041666666666668,
+        "duration": 0.909375
+      },
+      {
+        "pitch": 74,
+        "start": 0.16041666666666668,
+        "duration": 0.909375
+      }
+    ]
+  },
+  {
+    "name": "four C4 repeats",
+    "slug": "four_c4_repeats",
+    "midi": "four_c4_repeats.mid",
+    "wav": "four_c4_repeats.wav",
+    "mp3": "four_c4_repeats.mp3",
+    "heldout": false,
+    "truth": [
+      {
+        "pitch": 60,
+        "start": 0.11979166666666667,
+        "duration": 0.29062499999999997
+      },
+      {
+        "pitch": 60,
+        "start": 0.6197916666666666,
+        "duration": 0.290625
+      },
+      {
+        "pitch": 60,
+        "start": 1.1197916666666667,
+        "duration": 0.2906249999999999
+      },
+      {
+        "pitch": 60,
+        "start": 1.6197916666666667,
+        "duration": 0.2906249999999999
+      }
+    ]
+  },
+  {
+    "name": "E2-G2-A2-E2 bass",
+    "slug": "e2_g2_a2_e2_bass",
+    "midi": "e2_g2_a2_e2_bass.mid",
+    "wav": "e2_g2_a2_e2_bass.wav",
+    "mp3": "e2_g2_a2_e2_bass.mp3",
+    "heldout": false,
+    "truth": [
+      {
+        "pitch": 40,
+        "start": 0.16979166666666667,
+        "duration": 0.5104166666666666
+      },
+      {
+        "pitch": 43,
+        "start": 0.85,
+        "duration": 0.5104166666666666
+      },
+      {
+        "pitch": 45,
+        "start": 1.5302083333333334,
+        "duration": 0.5093749999999999
+      },
+      {
+        "pitch": 40,
+        "start": 2.2104166666666667,
+        "duration": 0.5093749999999999
+      }
+    ]
+  },
+  {
+    "name": "melody after 350ms silence",
+    "slug": "melody_after_350ms_silence",
+    "midi": "melody_after_350ms_silence.mid",
+    "wav": "melody_after_350ms_silence.wav",
+    "mp3": "melody_after_350ms_silence.mp3",
+    "heldout": false,
+    "truth": [
+      {
+        "pitch": 67,
+        "start": 0.35,
+        "duration": 0.41041666666666665
+      },
+      {
+        "pitch": 69,
+        "start": 0.9,
+        "duration": 0.41041666666666654
+      },
+      {
+        "pitch": 48,
+        "start": 0.35,
+        "duration": 1.2999999999999998
+      },
+      {
+        "pitch": 52,
+        "start": 0.35,
+        "duration": 1.2999999999999998
+      },
+      {
+        "pitch": 55,
+        "start": 0.35,
+        "duration": 1.2999999999999998
+      },
+      {
+        "pitch": 72,
+        "start": 1.45,
+        "duration": 0.3604166666666666
+      }
+    ]
+  },
+  {
+    "name": "heldout staggered six instruments",
+    "slug": "heldout_staggered_six_instruments",
+    "midi": "heldout_staggered_six_instruments.mid",
+    "wav": "heldout_staggered_six_instruments.wav",
+    "mp3": "heldout_staggered_six_instruments.mp3",
+    "heldout": true,
+    "truth": [
+      {
+        "pitch": 52,
+        "start": 0.18958333333333333,
+        "duration": 0.9406249999999999
+      },
+      {
+        "pitch": 57,
+        "start": 0.3697916666666667,
+        "duration": 0.840625
+      },
+      {
+        "pitch": 61,
+        "start": 0.5104166666666666,
+        "duration": 0.9
+      },
+      {
+        "pitch": 66,
+        "start": 0.6802083333333333,
+        "duration": 0.7395833333333333
+      },
+      {
+        "pitch": 45,
+        "start": 0.11041666666666666,
+        "duration": 1.3291666666666668
+      },
+      {
+        "pitch": 73,
+        "start": 0.8395833333333333,
+        "duration": 0.6604166666666667
+      }
+    ]
+  },
+  {
+    "name": "heldout dense chord",
+    "slug": "heldout_dense_chord",
+    "midi": "heldout_dense_chord.mid",
+    "wav": "heldout_dense_chord.wav",
+    "mp3": "heldout_dense_chord.mp3",
+    "heldout": true,
+    "truth": [
+      {
+        "pitch": 50,
+        "start": 0.23958333333333334,
+        "duration": 0.8208333333333332
+      },
+      {
+        "pitch": 54,
+        "start": 0.23958333333333334,
+        "duration": 0.8208333333333332
+      },
+      {
+        "pitch": 57,
+        "start": 0.23958333333333334,
+        "duration": 0.8208333333333332
+      },
+      {
+        "pitch": 62,
+        "start": 0.23958333333333334,
+        "duration": 0.8208333333333332
+      },
+      {
+        "pitch": 66,
+        "start": 0.23958333333333334,
+        "duration": 0.8208333333333332
+      },
+      {
+        "pitch": 69,
+        "start": 0.23958333333333334,
+        "duration": 0.8208333333333332
+      }
+    ]
+  }
+]

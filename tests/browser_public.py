@@ -11,7 +11,7 @@ def fixture():
     html=re.sub(r'<link[^>]+fonts.gstatic[^>]*>', '', html)
     html=html.replace('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>','')
     html=html.replace('<script src="ds_audio.js"></script>', '<script>'+(ROOT/'ds_audio.js').read_text()+'</script>')
-    for required in ['heartgold_bank_profiles.js','sseq_codec.js','sseq_transcribe.js','sseq_player.js']:
+    for required in ['heartgold_bank_profiles.js','sseq_codec.js','sigma_note_refine.js','sseq_transcribe.js','sigma_arranger.js','sigma_arranger_ui.js','heartgold_source_audio.js','heartgold_instruments.js','sseq_player.js']:
         html=html.replace('<script src="'+required+'"></script>', '<script>'+(ROOT/required).read_text()+'</script>')
     html=html.replace('<script src="metadata.js"></script>', '<script>'+(ROOT/'metadata.js').read_text()+'</script>')
     html=html.replace('<script src="client_core.js"></script>', '<script>'+(ROOT/'client_core.js').read_text()+'</script>')

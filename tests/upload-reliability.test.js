@@ -35,7 +35,7 @@ test('Storage 403 is never misclassified as missing; upload must not blindly ret
  }finally{console.error=original;}
 });
 test('Production SQL explicitly grants only server-only upload REST privileges',()=>{
- const sql=readFileSync(new URL('../supabase/migrations/20261115_upload_pipeline_permissions.sql',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('../docs/legacy_migrations/20261115_upload_pipeline_permissions.sql',import.meta.url),'utf8');
  assert.match(sql,/GRANT SELECT ON TABLE public\.theme_tracks TO service_role/i);
  assert.match(sql,/GRANT SELECT, DELETE ON TABLE public\.theme_uploads TO service_role/i);
  assert.match(sql,/REVOKE ALL ON TABLE public\.theme_uploads FROM PUBLIC, anon, authenticated/i);

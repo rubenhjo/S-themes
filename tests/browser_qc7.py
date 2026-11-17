@@ -13,11 +13,11 @@ async def main():
   await page.evaluate('() => {'+INIT+'}')
   errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
   await page.evaluate('''() => {
-   const key='sigma-upload-'+('07'.repeat(32));
+   const key='sigma-upload-'+('07'.repeat(32))+'-1028-my-song';
    sessionStorage.setItem(key,JSON.stringify({
     uploadId:'e7ebec2c-f475-499e-8447-0c46d9ab1c67',receipt:'f'.repeat(64),created:Date.now(),
-    signedUrl:'https://test.local/old',bucket:'sigma-theme-audio',extension:'mp3',token:'OLD',
-    storagePath:'uploads/old.mp3',tusEndpoint:'https://test.local/tus'
+    signedUrl:'https://test.local/old',bucket:'sigma-theme-audio',extension:'sseq',token:'OLD',
+    storagePath:'uploads/old.sseq',tusEndpoint:'https://test.local/tus'
    }));
    window.__calls.status=0;
    window.fetch=async(url,options)=>{
@@ -26,7 +26,7 @@ async def main():
     if(url.includes('/api/catalog'))return Response.json({tracks:[]});
     if(url.includes('/api/upload-status')){__calls.status++;const body=JSON.parse(options?.body||'{}');return Response.json({status:body.uploadId==='e7ebec2c-f475-499e-8447-0c46d9ab1c67'?'failed':'validating'});}
     if(url.includes('/api/upload-start')){__calls.start++;return Response.json({uploadId:'69ba7b07-1f80-42bd-8013-10ce5d3fe651',receipt:'a'.repeat(64),
-     signedUrl:'https://test.local/new',tusEndpoint:'https://test.local/tus',token:'TOKEN',storagePath:'uploads/new.mp3',bucket:'sigma-theme-audio',extension:'mp3'});}
+     signedUrl:'https://test.local/new',tusEndpoint:'https://test.local/tus',token:'TOKEN',storagePath:'uploads/new.sseq',bucket:'sigma-theme-audio',extension:'sseq'});}
     if(url.includes('/api/upload-finish')){__calls.finish++;return Response.json({pending:true,message:'Queued'},{status:202});}
     if(url.includes('/api/upload-cancel')){__calls.cancel++;return Response.json({canceled:true});}
     throw Error('unexpected '+url);
@@ -37,8 +37,8 @@ async def main():
   }''')
   await page.set_content(fixture(),wait_until='domcontentloaded')
   await page.wait_for_function('window.SigmaDebug?.state.ready===true')
-  await page.evaluate('''()=>{const data=new Uint8Array(2000);data[0]=73;data[1]=68;data[2]=51;
-   void SigmaDebug.uploadFiles([new File([data],'my-song.mp3',{type:'audio/mpeg'})]);}''')
+  await page.evaluate('''()=>{const data=SigmaSSEQ.build({slot:1028,profiles:SigmaBankProfiles,tracks:[{program:0,notes:[{start:0,duration:48,pitch:60,velocity:96}]}]});
+   void SigmaDebug.uploadFiles([new File([data],'my-song.sseq',{type:'application/octet-stream'})],{slot:1028});}''')
   await page.wait_for_function('window.__calls.finish===1',timeout=30000)
   await page.wait_for_timeout(400)
   calls=await page.evaluate('window.__calls')

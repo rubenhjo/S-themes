@@ -64,7 +64,7 @@ test('SSEQ parser rejects malformed bytes, mismatched header and empty tracks',(
 });
 
 test('SSEQ-only Supabase RLS hides non-migrated public legacy recordings',()=>{
- const migration=readFileSync(new URL('../supabase/migrations/20261115_sseq_only.sql',import.meta.url),'utf8');
+ const migration=readFileSync(new URL('../docs/legacy_migrations/20261115_sseq_only.sql',import.meta.url),'utf8');
  assert.match(migration,/CREATE POLICY "public read-only track catalog"/);
  assert.match(migration,/USING\s*\(mime_type\s*=\s*'application\/octet-stream'/);
  assert.match(migration,/sseq_id IS NOT NULL/);

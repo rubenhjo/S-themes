@@ -1,0 +1,382 @@
+[
+  {
+    "case": "four-note chord",
+    "codec": "wav",
+    "truth": [
+      48,
+      52,
+      55,
+      60
+    ],
+    "pitches": [
+      48,
+      52,
+      55,
+      60
+    ],
+    "notes": 4,
+    "bytes": 55,
+    "slot": 1028,
+    "maxConcurrent": 4
+  },
+  {
+    "case": "four-note chord",
+    "codec": "mp3",
+    "truth": [
+      48,
+      52,
+      55,
+      60
+    ],
+    "pitches": [
+      48,
+      52,
+      55,
+      60
+    ],
+    "notes": 4,
+    "bytes": 55,
+    "slot": 1028,
+    "maxConcurrent": 4
+  },
+  {
+    "case": "six-note chord",
+    "codec": "wav",
+    "truth": [
+      48,
+      52,
+      55,
+      60,
+      64,
+      67
+    ],
+    "pitches": [
+      48,
+      52,
+      55,
+      60,
+      64,
+      67
+    ],
+    "notes": 6,
+    "bytes": 61,
+    "slot": 1028,
+    "maxConcurrent": 6
+  },
+  {
+    "case": "six-note chord",
+    "codec": "mp3",
+    "truth": [
+      48,
+      52,
+      55,
+      60,
+      64,
+      67
+    ],
+    "pitches": [
+      48,
+      52,
+      55,
+      60,
+      64,
+      67
+    ],
+    "notes": 6,
+    "bytes": 61,
+    "slot": 1028,
+    "maxConcurrent": 6
+  },
+  {
+    "case": "strong harmonics",
+    "codec": "wav",
+    "truth": [
+      57
+    ],
+    "pitches": [
+      57
+    ],
+    "notes": 1,
+    "bytes": 46,
+    "slot": 1028,
+    "maxConcurrent": 1
+  },
+  {
+    "case": "strong harmonics",
+    "codec": "mp3",
+    "truth": [
+      57
+    ],
+    "pitches": [
+      57
+    ],
+    "notes": 1,
+    "bytes": 46,
+    "slot": 1028,
+    "maxConcurrent": 1
+  },
+  {
+    "case": "eight-note chord",
+    "codec": "wav",
+    "truth": [
+      48,
+      52,
+      55,
+      60,
+      64,
+      67,
+      71,
+      74
+    ],
+    "pitches": [
+      48,
+      52,
+      55,
+      60,
+      64,
+      67,
+      71,
+      74
+    ],
+    "notes": 8,
+    "bytes": 69,
+    "slot": 1028,
+    "maxConcurrent": 8
+  },
+  {
+    "case": "eight-note chord",
+    "codec": "mp3",
+    "truth": [
+      48,
+      52,
+      55,
+      60,
+      64,
+      67,
+      71,
+      74
+    ],
+    "pitches": [
+      48,
+      52,
+      55,
+      60,
+      64,
+      67,
+      71,
+      74
+    ],
+    "notes": 8,
+    "bytes": 69,
+    "slot": 1028,
+    "maxConcurrent": 8
+  },
+  {
+    "case": "four C4 repeats",
+    "codec": "wav",
+    "truth": [
+      60
+    ],
+    "pitches": [
+      60
+    ],
+    "notes": 4,
+    "bytes": 61,
+    "slot": 1028,
+    "maxConcurrent": 1
+  },
+  {
+    "case": "four C4 repeats",
+    "codec": "mp3",
+    "truth": [
+      60
+    ],
+    "pitches": [
+      60
+    ],
+    "notes": 4,
+    "bytes": 61,
+    "slot": 1028,
+    "maxConcurrent": 1
+  },
+  {
+    "case": "E2-G2-A2-E2 bass",
+    "codec": "wav",
+    "truth": [
+      40,
+      43,
+      45
+    ],
+    "pitches": [
+      40,
+      43,
+      45
+    ],
+    "notes": 4,
+    "bytes": 61,
+    "slot": 1028,
+    "maxConcurrent": 1
+  },
+  {
+    "case": "E2-G2-A2-E2 bass",
+    "codec": "mp3",
+    "truth": [
+      40,
+      43,
+      45
+    ],
+    "pitches": [
+      40,
+      43,
+      45
+    ],
+    "notes": 4,
+    "bytes": 61,
+    "slot": 1028,
+    "maxConcurrent": 1
+  },
+  {
+    "case": "melody after 350ms silence",
+    "codec": "wav",
+    "truth": [
+      48,
+      52,
+      55,
+      67,
+      69,
+      72
+    ],
+    "pitches": [
+      48,
+      52,
+      55,
+      67,
+      69,
+      72
+    ],
+    "notes": 6,
+    "bytes": 104,
+    "slot": 1028,
+    "maxConcurrent": 4
+  },
+  {
+    "case": "melody after 350ms silence",
+    "codec": "mp3",
+    "truth": [
+      48,
+      52,
+      55,
+      67,
+      69,
+      72
+    ],
+    "pitches": [
+      48,
+      52,
+      55,
+      67,
+      69,
+      72
+    ],
+    "notes": 6,
+    "bytes": 104,
+    "slot": 1028,
+    "maxConcurrent": 4
+  },
+  {
+    "case": "heldout staggered six instruments",
+    "codec": "wav",
+    "truth": [
+      45,
+      52,
+      57,
+      61,
+      66,
+      73
+    ],
+    "pitches": [
+      45,
+      52,
+      57,
+      61,
+      66,
+      73
+    ],
+    "notes": 6,
+    "bytes": 106,
+    "slot": 1028,
+    "maxConcurrent": 6
+  },
+  {
+    "case": "heldout staggered six instruments",
+    "codec": "mp3",
+    "truth": [
+      45,
+      52,
+      57,
+      61,
+      66,
+      73
+    ],
+    "pitches": [
+      45,
+      52,
+      57,
+      61,
+      66,
+      73
+    ],
+    "notes": 6,
+    "bytes": 106,
+    "slot": 1028,
+    "maxConcurrent": 6
+  },
+  {
+    "case": "heldout dense chord",
+    "codec": "wav",
+    "truth": [
+      50,
+      54,
+      57,
+      62,
+      66,
+      69
+    ],
+    "pitches": [
+      50,
+      54,
+      57,
+      62,
+      66,
+      69
+    ],
+    "notes": 6,
+    "bytes": 63,
+    "slot": 1028,
+    "maxConcurrent": 6
+  },
+  {
+    "case": "heldout dense chord",
+    "codec": "mp3",
+    "truth": [
+      50,
+      54,
+      57,
+      62,
+      66,
+      69
+    ],
+    "pitches": [
+      50,
+      54,
+      57,
+      62,
+      66,
+      69
+    ],
+    "notes": 6,
+    "bytes": 63,
+    "slot": 1028,
+    "maxConcurrent": 6
+  }
+]

@@ -21,11 +21,14 @@ function validProgram(context,program,pitch=null){
   throw Error('Instrument '+program+' cannot play note '+pitch+' with valid samples in HeartGold bank '+context.bankId);
  return program;
 }
-function build({tracks,slot,profiles,tempo=120,loop=false,limit=65536}){
+function build({tracks,slot,profiles,tempo=120,loop=false,limit=65536,endTick=null}){
  const location=profileSlot(profiles,slot);
  if(!Number.isInteger(tempo)||tempo<30||tempo>300)throw Error('Tempo outside 30–300 BPM');
- if(!Array.isArray(tracks)||tracks.length<1||tracks.length>8)throw Error('1–8 sequencer tracks supported');
+ if(!Array.isArray(tracks)||tracks.length<1||tracks.length>16)throw Error('1–16 sequencer tracks supported');
  const seq=[]; const origins=[];
+ const fullLength=Math.max(0,...tracks.flatMap(tr=>(tr.notes||[]).map(n=>n.start+n.duration)));
+ if(endTick!==null&&(!Number.isSafeInteger(endTick)||endTick<fullLength))throw Error('End tick precedes a sounding note');
+ const songEnd=endTick??fullLength;
  const mask=(1<<tracks.length)-1;
  if(tracks.length>1){seq.push(0xfe,mask&255,mask>>>8&255);for(let k=1;k<tracks.length;k++){seq.push(0x93,k,0,0,0);origins.push(seq.length-3)}}
  const trackOffsets=[];let allNotes=0;
@@ -42,14 +45,13 @@ function build({tracks,slot,profiles,tempo=120,loop=false,limit=65536}){
    if(!Number.isInteger(note.start)||note.start<0||!Number.isInteger(note.duration)||note.duration<1||!Number.isInteger(note.pitch)||note.pitch<0||note.pitch>127)throw Error('Invalid note timing or pitch');
    validProgram(location,track.program,note.pitch);
    if(note.start<tick)throw Error('Note onsets within a track must increase (use multiple tracks)');
-   validProgram(location,track.program,note.pitch);
    if(note.start>tick)seq.push(0x80,...vlq(note.start-tick));
    const vel=Math.round(note.velocity??96);if(vel<1||vel>127)throw Error('Invalid note velocity');
    seq.push(note.pitch,vel,...vlq(note.duration));tick=note.start;
    allNotes++;if(allNotes>30000)throw Error('Too many notes');
   }
   // Let the last sounding note finish before ending or looping.
-  const total=notes.reduce((m,n)=>Math.max(m,n.start+n.duration),tick);
+  const total=songEnd; // Every track loops at the same musical boundary, including early-ending voices.
   if(total>tick)seq.push(0x80,...vlq(total-tick));
   if(loop)seq.push(0xfc);
   seq.push(0xff);
@@ -100,11 +102,11 @@ function parse(buffer,{profiles=null,slot=null,maxBytes=262144}={}){
    if(tick>48*60*180)throw Error('SSEQ exceeds 3-hour timeline');
   }
   if(!ended)throw Error('Unterminated SSEQ track '+trackId);
-  tracks.push({track:trackId,notes,loopStartTick,loopEndTick:loopEnd>=0?tick:null});all.push(...notes);
+  tracks.push({track:trackId,notes,loopStartTick,loopEndTick:loopEnd>=0?tick:null,endTick:tick});all.push(...notes);
  }
  if(!all.length)throw Error('SSEQ contains no playable notes');
  if(profiles && slot!==null){const context=profileSlot(profiles,slot);for(const n of all)validProgram(context,n.program,n.pitch);}
- return {tracks,notes:all,tempo:globalTempo,durationTicks:all.reduce((m,n)=>Math.max(m,n.start+n.duration),0),infinite,bytes:b.length,slot};
+ return {tracks,notes:all,tempo:globalTempo,durationTicks:Math.max(...tracks.map(t=>t.endTick),all.reduce((m,n)=>Math.max(m,n.start+n.duration),0)),infinite,bytes:b.length,slot};
 }
 return {build,parse,profileSlot,validProgram,asBytes,vlq};
 });

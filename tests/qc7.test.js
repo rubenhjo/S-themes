@@ -52,16 +52,18 @@ test('ST-036 all JSON POST endpoints use common strict parser before reading Sup
   assert.equal(response.code,'INVALID_REQUEST');
  }
 });
-test('ST-034 validation pipeline does not directly publish in upload-finish',()=>{
+test('ST-034 validation pipeline publishes only after trusted storage and SSEQ checks',()=>{
  const source=readFileSync(new URL('../api/upload-finish.js',import.meta.url),'utf8');
  assert.match(source,/rpc\('queue_theme_upload'/);
- assert.doesNotMatch(source,/rpc\('publish_theme_upload'/);
+ assert.match(source,/await checkObject\(row,slot\)/);
+ assert.match(source,/rpc\('claim_theme_validation_for_upload'/);
+ assert.match(source,/rpc\('publish_theme_upload'/);
  const worker=readFileSync(new URL('../scripts/validate-pending.mjs',import.meta.url),'utf8');
  assert.match(worker,/parseSseq/);
  assert.match(worker,/rpc\('publish_theme_upload'/);
 });
 test('ST-035 quota migration serializes all public reservations and counts real object bytes',()=>{
- const sql=readFileSync(new URL('../supabase/migrations/20261114_qc7_validation_quota.sql',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('../docs/legacy_migrations/20261114_qc7_validation_quota.sql',import.meta.url),'utf8');
  assert.match(sql,/pg_advisory_xact_lock\(98765431\)/);
  assert.match(sql,/theme_accounted_bytes/);assert.match(sql,/storage\.objects/);
  assert.match(sql,/v_used\+p_size>v_limit/);
@@ -71,7 +73,7 @@ test('ST-037 new reservations are checked with upload-status before being re-use
  const source=readFileSync(new URL('app.js',root),'utf8');
  assert.match(source,/getJSON\('\/api\/upload-status'/);
  assert.match(source,/if\(status\.status==='pending'\)\{reservation=candidate;resumedReservation=true;\}/);
- assert.match(source,/if\(!reservation\)sessionRemove\('sigma-upload-'/);
+ assert.match(source,/if\(!reservation\)sessionRemove\(uploadKey\)/);
 });
 
 test('ST-030 transient pagination failure is retried, nontransient 400 is not',async()=>{

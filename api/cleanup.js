@@ -1,4 +1,5 @@
 import {sb,env,BUCKET} from '../lib/common.js';
+import {removeSongObject} from '../lib/song-deletion.js';
 // Vercel Cron calls with Authorization: Bearer <CRON_SECRET>. Manual invocation uses same secret.
 export default async function handler(req,res){
  if(req.method!=='GET')return res.status(405).end();
@@ -11,6 +12,14 @@ export default async function handler(req,res){
    if(!r || !(r.ok||r.status===404)){failed++;continue}
    await sb('/rest/v1/theme_uploads?id=eq.'+row.id,{method:'DELETE'});removed++;
   }
-  return res.status(200).json({stale:stale?.length||0,removed,failed});
+  // Deleted songs are tombstoned immediately and invisible to the public catalog.
+  // Retry only their Storage deletion; leave DB tombstones for idempotency and audit.
+  const queued=await sb('/rest/v1/theme_tracks?deleted_at=not.is.null&storage_deleted_at=is.null&select=id,storage_path&limit=50');
+  let songsRemoved=0,songsPending=0;
+  for(const track of queued||[]){
+   if(await removeSongObject(track.storage_path,track.id))songsRemoved++;
+   else songsPending++;
+  }
+  return res.status(200).json({stale:stale?.length||0,removed,failed,songsQueued:queued?.length||0,songsRemoved,songsPending});
  }catch(e){console.error(e);return res.status(502).json({error:'Cleanup failed'})}
 }

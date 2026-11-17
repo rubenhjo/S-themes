@@ -23,7 +23,7 @@ test('ST-043 exact cap succeeds, so valid uploads are not rejected',async()=>{
  assert.equal(bytes,20);
 });
 test('ST-042 PostgreSQL claim fencing protects both publish and reject',()=>{
- const sql=readFileSync(new URL('supabase/migrations/20261115_validation_claim_lease.sql',root),'utf8');
+ const sql=readFileSync(new URL('docs/legacy_migrations/20261115_validation_claim_lease.sql',root),'utf8');
  const worker=readFileSync(new URL('scripts/validate-pending.mjs',root),'utf8');
  assert.match(sql,/validation_claim_id=pg_catalog\.gen_random_uuid\(\)/);
  assert.match(sql,/r\.validation_claim_id IS DISTINCT FROM p_claim_id/);

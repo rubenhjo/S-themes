@@ -1,0 +1,2961 @@
+{
+  "description": "Original v1.7.3 vs v1.7.4 measured against authored MIDI / additional withheld scores",
+  "rules": "pitch exact, onset<=50ms, offset<=max(50ms,20% duration); no test truth adjusted",
+  "known": {
+    "before": {
+      "correct": 70,
+      "extra": 28,
+      "missing": 20,
+      "precision": 0.7142857142857143,
+      "recall": 0.7777777777777778,
+      "f1": 0.7446808510638298
+    },
+    "after": {
+      "correct": 90,
+      "extra": 0,
+      "missing": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    }
+  },
+  "unseen": {
+    "before": {
+      "correct": 11,
+      "extra": 8,
+      "missing": 6,
+      "precision": 0.5789473684210527,
+      "recall": 0.6470588235294118,
+      "f1": 0.6111111111111113
+    },
+    "after": {
+      "correct": 16,
+      "extra": 3,
+      "missing": 1,
+      "precision": 0.8421052631578947,
+      "recall": 0.9411764705882353,
+      "f1": 0.8888888888888888
+    }
+  },
+  "rows": [
+    {
+      "case": "four-note chord",
+      "codec": "wav",
+      "truth": [
+        {
+          "pitch": 48,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 52,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 55,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 60,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 39.09,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.11458333333333333,
+            "duration": 0.8541666666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.11458333333333333,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 55,
+            "start": 0.11458333333333333,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 43.71,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 52,
+            "start": 0.11458333333333333,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 55,
+            "start": 0.11458333333333333,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.9166666666666666
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "parts": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "export": [
+          48,
+          52,
+          55,
+          60
+        ]
+      }
+    },
+    {
+      "case": "four-note chord",
+      "codec": "mp3",
+      "truth": [
+        {
+          "pitch": 48,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 52,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 55,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 60,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 21.19,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.11458333333333333,
+            "duration": 0.8541666666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.11458333333333333,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 55,
+            "start": 0.11458333333333333,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 31.96,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 52,
+            "start": 0.11458333333333333,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 55,
+            "start": 0.11458333333333333,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.9166666666666666
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "parts": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "export": [
+          48,
+          52,
+          55,
+          60
+        ]
+      }
+    },
+    {
+      "case": "six-note chord",
+      "codec": "wav",
+      "truth": [
+        {
+          "pitch": 48,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 52,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 55,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 60,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 64,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 67,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 12.05,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.11458333333333333,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 55,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 64,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 67,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 35.64,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 52,
+            "start": 0.11458333333333333,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 55,
+            "start": 0.11458333333333333,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 64,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 67,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "parts": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "export": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ]
+      }
+    },
+    {
+      "case": "six-note chord",
+      "codec": "mp3",
+      "truth": [
+        {
+          "pitch": 48,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 52,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 55,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 60,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 64,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        },
+        {
+          "pitch": 67,
+          "start": 0.11979166666666667,
+          "duration": 0.9
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 12.75,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.11458333333333333,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 55,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 64,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 67,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 12.54,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 52,
+            "start": 0.11458333333333333,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 55,
+            "start": 0.11458333333333333,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 64,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 67,
+            "start": 0.11458333333333333,
+            "duration": 0.90625
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "parts": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "export": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ]
+      }
+    },
+    {
+      "case": "strong harmonics",
+      "codec": "wav",
+      "truth": [
+        {
+          "pitch": 57,
+          "start": 0.1,
+          "duration": 0.8895833333333334
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 1,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 1,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 10.77,
+        "notes": [
+          {
+            "pitch": 57,
+            "start": 0.09375,
+            "duration": 0.8854166666666666
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 1,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 1,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 10.78,
+        "notes": [
+          {
+            "pitch": 57,
+            "start": 0.09375,
+            "duration": 0.8958333333333334
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          57
+        ],
+        "parts": [
+          57
+        ],
+        "export": [
+          57
+        ]
+      }
+    },
+    {
+      "case": "strong harmonics",
+      "codec": "mp3",
+      "truth": [
+        {
+          "pitch": 57,
+          "start": 0.1,
+          "duration": 0.8895833333333334
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 1,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 1,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 11.81,
+        "notes": [
+          {
+            "pitch": 57,
+            "start": 0.09375,
+            "duration": 0.8854166666666666
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 1,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 1,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 17.14,
+        "notes": [
+          {
+            "pitch": 57,
+            "start": 0.09375,
+            "duration": 0.8958333333333334
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          57
+        ],
+        "parts": [
+          57
+        ],
+        "export": [
+          57
+        ]
+      }
+    },
+    {
+      "case": "eight-note chord",
+      "codec": "wav",
+      "truth": [
+        {
+          "pitch": 48,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 52,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 55,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 60,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 64,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 67,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 71,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 74,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 8,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 8,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 19.74,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.13541666666666666,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 55,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 60,
+            "start": 0.13541666666666666,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 64,
+            "start": 0.13541666666666666,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 67,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 71,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 74,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 8,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 8,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 21.4,
+        "notes": [
+          {
+            "pitch": 60,
+            "start": 0.14583333333333334,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 64,
+            "start": 0.14583333333333334,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 67,
+            "start": 0.14583333333333334,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 74,
+            "start": 0.14583333333333334,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 48,
+            "start": 0.15625,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.15625,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 55,
+            "start": 0.15625,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 71,
+            "start": 0.15625,
+            "duration": 0.9166666666666666
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "parts": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "export": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ]
+      }
+    },
+    {
+      "case": "eight-note chord",
+      "codec": "mp3",
+      "truth": [
+        {
+          "pitch": 48,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 52,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 55,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 60,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 64,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 67,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 71,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        },
+        {
+          "pitch": 74,
+          "start": 0.16041666666666668,
+          "duration": 0.909375
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 8,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 8,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 22.15,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.13541666666666666,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 55,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 60,
+            "start": 0.13541666666666666,
+            "duration": 0.8854166666666666
+          },
+          {
+            "pitch": 64,
+            "start": 0.13541666666666666,
+            "duration": 0.90625
+          },
+          {
+            "pitch": 67,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 71,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 74,
+            "start": 0.13541666666666666,
+            "duration": 0.9270833333333334
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 8,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 8,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 22.17,
+        "notes": [
+          {
+            "pitch": 60,
+            "start": 0.14583333333333334,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 64,
+            "start": 0.14583333333333334,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 67,
+            "start": 0.14583333333333334,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 74,
+            "start": 0.14583333333333334,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 48,
+            "start": 0.15625,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.15625,
+            "duration": 0.9166666666666666
+          },
+          {
+            "pitch": 55,
+            "start": 0.15625,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 71,
+            "start": 0.15625,
+            "duration": 0.9166666666666666
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "parts": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "export": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ]
+      }
+    },
+    {
+      "case": "four C4 repeats",
+      "codec": "wav",
+      "truth": [
+        {
+          "pitch": 60,
+          "start": 0.11979166666666667,
+          "duration": 0.29062499999999997
+        },
+        {
+          "pitch": 60,
+          "start": 0.6197916666666666,
+          "duration": 0.290625
+        },
+        {
+          "pitch": 60,
+          "start": 1.1197916666666667,
+          "duration": 0.2906249999999999
+        },
+        {
+          "pitch": 60,
+          "start": 1.6197916666666667,
+          "duration": 0.2906249999999999
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 5.93,
+        "notes": [
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 0.6041666666666666,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 1.1145833333333333,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 1.6041666666666667,
+            "duration": 0.3020833333333333
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 6.2,
+        "notes": [
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 0.6041666666666666,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 1.1145833333333333,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 1.6145833333333333,
+            "duration": 0.3020833333333333
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          60,
+          60,
+          60,
+          60
+        ],
+        "parts": [
+          60,
+          60,
+          60,
+          60
+        ],
+        "export": [
+          60,
+          60,
+          60,
+          60
+        ]
+      }
+    },
+    {
+      "case": "four C4 repeats",
+      "codec": "mp3",
+      "truth": [
+        {
+          "pitch": 60,
+          "start": 0.11979166666666667,
+          "duration": 0.29062499999999997
+        },
+        {
+          "pitch": 60,
+          "start": 0.6197916666666666,
+          "duration": 0.290625
+        },
+        {
+          "pitch": 60,
+          "start": 1.1197916666666667,
+          "duration": 0.2906249999999999
+        },
+        {
+          "pitch": 60,
+          "start": 1.6197916666666667,
+          "duration": 0.2906249999999999
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 7.19,
+        "notes": [
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 0.6041666666666666,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 1.1145833333333333,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 1.6041666666666667,
+            "duration": 0.3020833333333333
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 5.93,
+        "notes": [
+          {
+            "pitch": 60,
+            "start": 0.11458333333333333,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 0.6041666666666666,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 1.1145833333333333,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 60,
+            "start": 1.6145833333333333,
+            "duration": 0.3020833333333333
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          60,
+          60,
+          60,
+          60
+        ],
+        "parts": [
+          60,
+          60,
+          60,
+          60
+        ],
+        "export": [
+          60,
+          60,
+          60,
+          60
+        ]
+      }
+    },
+    {
+      "case": "E2-G2-A2-E2 bass",
+      "codec": "wav",
+      "truth": [
+        {
+          "pitch": 40,
+          "start": 0.16979166666666667,
+          "duration": 0.5104166666666666
+        },
+        {
+          "pitch": 43,
+          "start": 0.85,
+          "duration": 0.5104166666666666
+        },
+        {
+          "pitch": 45,
+          "start": 1.5302083333333334,
+          "duration": 0.5093749999999999
+        },
+        {
+          "pitch": 40,
+          "start": 2.2104166666666667,
+          "duration": 0.5093749999999999
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 44.99,
+        "notes": [
+          {
+            "pitch": 40,
+            "start": 0.16666666666666666,
+            "duration": 0.4895833333333333
+          },
+          {
+            "pitch": 43,
+            "start": 0.8333333333333334,
+            "duration": 0.5104166666666666
+          },
+          {
+            "pitch": 45,
+            "start": 1.5104166666666667,
+            "duration": 0.5104166666666666
+          },
+          {
+            "pitch": 40,
+            "start": 2.2083333333333335,
+            "duration": 0.4895833333333333
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 34.66,
+        "notes": [
+          {
+            "pitch": 40,
+            "start": 0.15625,
+            "duration": 0.5208333333333334
+          },
+          {
+            "pitch": 43,
+            "start": 0.8333333333333334,
+            "duration": 0.53125
+          },
+          {
+            "pitch": 45,
+            "start": 1.53125,
+            "duration": 0.5208333333333334
+          },
+          {
+            "pitch": 40,
+            "start": 2.2083333333333335,
+            "duration": 0.5208333333333334
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          40,
+          40,
+          43,
+          45
+        ],
+        "parts": [
+          40,
+          40,
+          43,
+          45
+        ],
+        "export": [
+          40,
+          40,
+          43,
+          45
+        ]
+      }
+    },
+    {
+      "case": "E2-G2-A2-E2 bass",
+      "codec": "mp3",
+      "truth": [
+        {
+          "pitch": 40,
+          "start": 0.16979166666666667,
+          "duration": 0.5104166666666666
+        },
+        {
+          "pitch": 43,
+          "start": 0.85,
+          "duration": 0.5104166666666666
+        },
+        {
+          "pitch": 45,
+          "start": 1.5302083333333334,
+          "duration": 0.5093749999999999
+        },
+        {
+          "pitch": 40,
+          "start": 2.2104166666666667,
+          "duration": 0.5093749999999999
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 14.75,
+        "notes": [
+          {
+            "pitch": 40,
+            "start": 0.16666666666666666,
+            "duration": 0.4895833333333333
+          },
+          {
+            "pitch": 43,
+            "start": 0.8333333333333334,
+            "duration": 0.5104166666666666
+          },
+          {
+            "pitch": 45,
+            "start": 1.5104166666666667,
+            "duration": 0.5104166666666666
+          },
+          {
+            "pitch": 40,
+            "start": 2.2083333333333335,
+            "duration": 0.4895833333333333
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 15.8,
+        "notes": [
+          {
+            "pitch": 40,
+            "start": 0.15625,
+            "duration": 0.5208333333333334
+          },
+          {
+            "pitch": 43,
+            "start": 0.8333333333333334,
+            "duration": 0.53125
+          },
+          {
+            "pitch": 45,
+            "start": 1.53125,
+            "duration": 0.5208333333333334
+          },
+          {
+            "pitch": 40,
+            "start": 2.2083333333333335,
+            "duration": 0.5208333333333334
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          40,
+          40,
+          43,
+          45
+        ],
+        "parts": [
+          40,
+          40,
+          43,
+          45
+        ],
+        "export": [
+          40,
+          40,
+          43,
+          45
+        ]
+      }
+    },
+    {
+      "case": "melody after 350ms silence",
+      "codec": "wav",
+      "truth": [
+        {
+          "pitch": 67,
+          "start": 0.35,
+          "duration": 0.41041666666666665
+        },
+        {
+          "pitch": 69,
+          "start": 0.9,
+          "duration": 0.41041666666666654
+        },
+        {
+          "pitch": 48,
+          "start": 0.35,
+          "duration": 1.2999999999999998
+        },
+        {
+          "pitch": 52,
+          "start": 0.35,
+          "duration": 1.2999999999999998
+        },
+        {
+          "pitch": 55,
+          "start": 0.35,
+          "duration": 1.2999999999999998
+        },
+        {
+          "pitch": 72,
+          "start": 1.45,
+          "duration": 0.3604166666666666
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 1,
+          "extra": 8,
+          "missing": 5
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 5,
+          "missing": 2
+        },
+        "ms": 15.97,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.34375,
+            "duration": 1.25
+          },
+          {
+            "pitch": 52,
+            "start": 0.34375,
+            "duration": 1.0208333333333333
+          },
+          {
+            "pitch": 55,
+            "start": 0.34375,
+            "duration": 1.0208333333333333
+          },
+          {
+            "pitch": 67,
+            "start": 0.34375,
+            "duration": 0.3229166666666667
+          },
+          {
+            "pitch": 69,
+            "start": 0.7916666666666666,
+            "duration": 0.46875
+          },
+          {
+            "pitch": 53,
+            "start": 1.375,
+            "duration": 0.22916666666666666
+          },
+          {
+            "pitch": 60,
+            "start": 1.375,
+            "duration": 0.1875
+          },
+          {
+            "pitch": 64,
+            "start": 1.375,
+            "duration": 0.1875
+          },
+          {
+            "pitch": 72,
+            "start": 1.375,
+            "duration": 0.4375
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 17.15,
+        "notes": [
+          {
+            "pitch": 67,
+            "start": 0.34375,
+            "duration": 0.4166666666666667
+          },
+          {
+            "pitch": 48,
+            "start": 0.3541666666666667,
+            "duration": 1.3020833333333333
+          },
+          {
+            "pitch": 52,
+            "start": 0.3541666666666667,
+            "duration": 1.3020833333333333
+          },
+          {
+            "pitch": 55,
+            "start": 0.3541666666666667,
+            "duration": 1.3020833333333333
+          },
+          {
+            "pitch": 69,
+            "start": 0.8958333333333334,
+            "duration": 0.4166666666666667
+          },
+          {
+            "pitch": 72,
+            "start": 1.4479166666666667,
+            "duration": 0.3645833333333333
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          48,
+          52,
+          55,
+          67,
+          69,
+          72
+        ],
+        "parts": [
+          48,
+          52,
+          55,
+          67,
+          69,
+          72
+        ],
+        "export": [
+          48,
+          52,
+          55,
+          67,
+          69,
+          72
+        ]
+      }
+    },
+    {
+      "case": "melody after 350ms silence",
+      "codec": "mp3",
+      "truth": [
+        {
+          "pitch": 67,
+          "start": 0.35,
+          "duration": 0.41041666666666665
+        },
+        {
+          "pitch": 69,
+          "start": 0.9,
+          "duration": 0.41041666666666654
+        },
+        {
+          "pitch": 48,
+          "start": 0.35,
+          "duration": 1.2999999999999998
+        },
+        {
+          "pitch": 52,
+          "start": 0.35,
+          "duration": 1.2999999999999998
+        },
+        {
+          "pitch": 55,
+          "start": 0.35,
+          "duration": 1.2999999999999998
+        },
+        {
+          "pitch": 72,
+          "start": 1.45,
+          "duration": 0.3604166666666666
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 1,
+          "extra": 8,
+          "missing": 5
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 5,
+          "missing": 2
+        },
+        "ms": 12.96,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.34375,
+            "duration": 1.25
+          },
+          {
+            "pitch": 52,
+            "start": 0.34375,
+            "duration": 1.0208333333333333
+          },
+          {
+            "pitch": 55,
+            "start": 0.34375,
+            "duration": 1.0208333333333333
+          },
+          {
+            "pitch": 67,
+            "start": 0.34375,
+            "duration": 0.3229166666666667
+          },
+          {
+            "pitch": 69,
+            "start": 0.7916666666666666,
+            "duration": 0.46875
+          },
+          {
+            "pitch": 53,
+            "start": 1.375,
+            "duration": 0.22916666666666666
+          },
+          {
+            "pitch": 60,
+            "start": 1.375,
+            "duration": 0.1875
+          },
+          {
+            "pitch": 64,
+            "start": 1.375,
+            "duration": 0.1875
+          },
+          {
+            "pitch": 72,
+            "start": 1.375,
+            "duration": 0.4375
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 14.64,
+        "notes": [
+          {
+            "pitch": 67,
+            "start": 0.34375,
+            "duration": 0.4166666666666667
+          },
+          {
+            "pitch": 48,
+            "start": 0.3541666666666667,
+            "duration": 1.3020833333333333
+          },
+          {
+            "pitch": 52,
+            "start": 0.3541666666666667,
+            "duration": 1.3020833333333333
+          },
+          {
+            "pitch": 55,
+            "start": 0.3541666666666667,
+            "duration": 1.3020833333333333
+          },
+          {
+            "pitch": 69,
+            "start": 0.8958333333333334,
+            "duration": 0.4166666666666667
+          },
+          {
+            "pitch": 72,
+            "start": 1.4479166666666667,
+            "duration": 0.3645833333333333
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          48,
+          52,
+          55,
+          67,
+          69,
+          72
+        ],
+        "parts": [
+          48,
+          52,
+          55,
+          67,
+          69,
+          72
+        ],
+        "export": [
+          48,
+          52,
+          55,
+          67,
+          69,
+          72
+        ]
+      }
+    },
+    {
+      "case": "heldout staggered six instruments",
+      "codec": "wav",
+      "truth": [
+        {
+          "pitch": 52,
+          "start": 0.18958333333333333,
+          "duration": 0.9406249999999999
+        },
+        {
+          "pitch": 57,
+          "start": 0.3697916666666667,
+          "duration": 0.840625
+        },
+        {
+          "pitch": 61,
+          "start": 0.5104166666666666,
+          "duration": 0.9
+        },
+        {
+          "pitch": 66,
+          "start": 0.6802083333333333,
+          "duration": 0.7395833333333333
+        },
+        {
+          "pitch": 45,
+          "start": 0.11041666666666666,
+          "duration": 1.3291666666666668
+        },
+        {
+          "pitch": 73,
+          "start": 0.8395833333333333,
+          "duration": 0.6604166666666667
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 1,
+          "extra": 6,
+          "missing": 5
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 3,
+          "missing": 2
+        },
+        "ms": 8.44,
+        "notes": [
+          {
+            "pitch": 45,
+            "start": 0.09375,
+            "duration": 1.28125
+          },
+          {
+            "pitch": 52,
+            "start": 0.09375,
+            "duration": 0.9791666666666666
+          },
+          {
+            "pitch": 57,
+            "start": 0.13541666666666666,
+            "duration": 1.0416666666666667
+          },
+          {
+            "pitch": 61,
+            "start": 0.4166666666666667,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 66,
+            "start": 0.6041666666666666,
+            "duration": 0.7395833333333334
+          },
+          {
+            "pitch": 73,
+            "start": 0.7916666666666666,
+            "duration": 0.46875
+          },
+          {
+            "pitch": 73,
+            "start": 1.3020833333333333,
+            "duration": 0.1875
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 8.66,
+        "notes": [
+          {
+            "pitch": 45,
+            "start": 0.10416666666666667,
+            "duration": 1.34375
+          },
+          {
+            "pitch": 52,
+            "start": 0.17708333333333334,
+            "duration": 0.9583333333333334
+          },
+          {
+            "pitch": 57,
+            "start": 0.3541666666666667,
+            "duration": 0.84375
+          },
+          {
+            "pitch": 61,
+            "start": 0.5104166666666666,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 66,
+            "start": 0.6770833333333334,
+            "duration": 0.7395833333333334
+          },
+          {
+            "pitch": 73,
+            "start": 0.8333333333333334,
+            "duration": 0.6666666666666666
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "parts": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "export": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ]
+      }
+    },
+    {
+      "case": "heldout staggered six instruments",
+      "codec": "mp3",
+      "truth": [
+        {
+          "pitch": 52,
+          "start": 0.18958333333333333,
+          "duration": 0.9406249999999999
+        },
+        {
+          "pitch": 57,
+          "start": 0.3697916666666667,
+          "duration": 0.840625
+        },
+        {
+          "pitch": 61,
+          "start": 0.5104166666666666,
+          "duration": 0.9
+        },
+        {
+          "pitch": 66,
+          "start": 0.6802083333333333,
+          "duration": 0.7395833333333333
+        },
+        {
+          "pitch": 45,
+          "start": 0.11041666666666666,
+          "duration": 1.3291666666666668
+        },
+        {
+          "pitch": 73,
+          "start": 0.8395833333333333,
+          "duration": 0.6604166666666667
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 1,
+          "extra": 6,
+          "missing": 5
+        },
+        "lenient": {
+          "correct": 4,
+          "extra": 3,
+          "missing": 2
+        },
+        "ms": 8.14,
+        "notes": [
+          {
+            "pitch": 45,
+            "start": 0.09375,
+            "duration": 1.28125
+          },
+          {
+            "pitch": 52,
+            "start": 0.09375,
+            "duration": 0.9791666666666666
+          },
+          {
+            "pitch": 57,
+            "start": 0.13541666666666666,
+            "duration": 1.0416666666666667
+          },
+          {
+            "pitch": 61,
+            "start": 0.4166666666666667,
+            "duration": 0.9270833333333334
+          },
+          {
+            "pitch": 66,
+            "start": 0.6041666666666666,
+            "duration": 0.7395833333333334
+          },
+          {
+            "pitch": 73,
+            "start": 0.7916666666666666,
+            "duration": 0.46875
+          },
+          {
+            "pitch": 73,
+            "start": 1.3020833333333333,
+            "duration": 0.1875
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 8.86,
+        "notes": [
+          {
+            "pitch": 45,
+            "start": 0.10416666666666667,
+            "duration": 1.34375
+          },
+          {
+            "pitch": 52,
+            "start": 0.17708333333333334,
+            "duration": 0.9583333333333334
+          },
+          {
+            "pitch": 57,
+            "start": 0.3541666666666667,
+            "duration": 0.84375
+          },
+          {
+            "pitch": 61,
+            "start": 0.5104166666666666,
+            "duration": 0.8958333333333334
+          },
+          {
+            "pitch": 66,
+            "start": 0.6770833333333334,
+            "duration": 0.7395833333333334
+          },
+          {
+            "pitch": 73,
+            "start": 0.8333333333333334,
+            "duration": 0.6666666666666666
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "parts": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "export": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ]
+      }
+    },
+    {
+      "case": "heldout dense chord",
+      "codec": "wav",
+      "truth": [
+        {
+          "pitch": 50,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 54,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 57,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 62,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 66,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 69,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 6.08,
+        "notes": [
+          {
+            "pitch": 50,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 54,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 57,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 62,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 66,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 69,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 8.03,
+        "notes": [
+          {
+            "pitch": 62,
+            "start": 0.22916666666666666,
+            "duration": 0.8333333333333334
+          },
+          {
+            "pitch": 66,
+            "start": 0.22916666666666666,
+            "duration": 0.8333333333333334
+          },
+          {
+            "pitch": 69,
+            "start": 0.22916666666666666,
+            "duration": 0.8333333333333334
+          },
+          {
+            "pitch": 50,
+            "start": 0.23958333333333334,
+            "duration": 0.8229166666666666
+          },
+          {
+            "pitch": 54,
+            "start": 0.23958333333333334,
+            "duration": 0.8229166666666666
+          },
+          {
+            "pitch": 57,
+            "start": 0.23958333333333334,
+            "duration": 0.8333333333333334
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "parts": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "export": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ]
+      }
+    },
+    {
+      "case": "heldout dense chord",
+      "codec": "mp3",
+      "truth": [
+        {
+          "pitch": 50,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 54,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 57,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 62,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 66,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        },
+        {
+          "pitch": 69,
+          "start": 0.23958333333333334,
+          "duration": 0.8208333333333332
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 5.73,
+        "notes": [
+          {
+            "pitch": 50,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 54,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 57,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 62,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 66,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          },
+          {
+            "pitch": 69,
+            "start": 0.22916666666666666,
+            "duration": 0.8125
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 6.53,
+        "notes": [
+          {
+            "pitch": 62,
+            "start": 0.22916666666666666,
+            "duration": 0.8333333333333334
+          },
+          {
+            "pitch": 66,
+            "start": 0.22916666666666666,
+            "duration": 0.8333333333333334
+          },
+          {
+            "pitch": 69,
+            "start": 0.22916666666666666,
+            "duration": 0.8333333333333334
+          },
+          {
+            "pitch": 50,
+            "start": 0.23958333333333334,
+            "duration": 0.8229166666666666
+          },
+          {
+            "pitch": 54,
+            "start": 0.23958333333333334,
+            "duration": 0.8229166666666666
+          },
+          {
+            "pitch": 57,
+            "start": 0.23958333333333334,
+            "duration": 0.8333333333333334
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "parts": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "export": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ]
+      }
+    },
+    {
+      "case": "unseen syncopated bass and melody",
+      "codec": "synth WAV-equivalent",
+      "heldout": true,
+      "truth": [
+        {
+          "pitch": 40,
+          "start": 0.22,
+          "duration": 0.75
+        },
+        {
+          "pitch": 67,
+          "start": 0.24,
+          "duration": 0.34
+        },
+        {
+          "pitch": 43,
+          "start": 1.06,
+          "duration": 0.67
+        },
+        {
+          "pitch": 69,
+          "start": 1.11,
+          "duration": 0.36
+        },
+        {
+          "pitch": 45,
+          "start": 1.94,
+          "duration": 0.67
+        },
+        {
+          "pitch": 71,
+          "start": 2,
+          "duration": 0.35
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 2,
+          "extra": 6,
+          "missing": 4
+        },
+        "lenient": {
+          "correct": 5,
+          "extra": 3,
+          "missing": 1
+        },
+        "ms": 13.33,
+        "notes": [
+          {
+            "pitch": 40,
+            "start": 0.20833333333333334,
+            "duration": 0.20833333333333334
+          },
+          {
+            "pitch": 53,
+            "start": 0.20833333333333334,
+            "duration": 0.22916666666666666
+          },
+          {
+            "pitch": 67,
+            "start": 0.20833333333333334,
+            "duration": 0.3020833333333333
+          },
+          {
+            "pitch": 40,
+            "start": 0.5520833333333334,
+            "duration": 0.375
+          },
+          {
+            "pitch": 43,
+            "start": 1.0416666666666667,
+            "duration": 0.6770833333333334
+          },
+          {
+            "pitch": 69,
+            "start": 1.0416666666666667,
+            "duration": 0.375
+          },
+          {
+            "pitch": 45,
+            "start": 1.9270833333333333,
+            "duration": 0.6770833333333334
+          },
+          {
+            "pitch": 71,
+            "start": 1.9270833333333333,
+            "duration": 0.375
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 5,
+          "extra": 3,
+          "missing": 1
+        },
+        "lenient": {
+          "correct": 5,
+          "extra": 3,
+          "missing": 1
+        },
+        "ms": 15.34,
+        "notes": [
+          {
+            "pitch": 40,
+            "start": 0.20833333333333334,
+            "duration": 0.20833333333333334
+          },
+          {
+            "pitch": 53,
+            "start": 0.20833333333333334,
+            "duration": 0.22916666666666666
+          },
+          {
+            "pitch": 67,
+            "start": 0.22916666666666666,
+            "duration": 0.3541666666666667
+          },
+          {
+            "pitch": 40,
+            "start": 0.6354166666666666,
+            "duration": 0.3333333333333333
+          },
+          {
+            "pitch": 43,
+            "start": 1.0625,
+            "duration": 0.6770833333333334
+          },
+          {
+            "pitch": 69,
+            "start": 1.1041666666666667,
+            "duration": 0.3645833333333333
+          },
+          {
+            "pitch": 45,
+            "start": 1.9375,
+            "duration": 0.6770833333333334
+          },
+          {
+            "pitch": 71,
+            "start": 2,
+            "duration": 0.3541666666666667
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          40,
+          40,
+          43,
+          45,
+          53,
+          67,
+          69,
+          71
+        ],
+        "parts": [
+          40,
+          40,
+          43,
+          45,
+          53,
+          67,
+          69,
+          71
+        ],
+        "export": [
+          40,
+          40,
+          43,
+          45,
+          53,
+          67,
+          69,
+          71
+        ]
+      }
+    },
+    {
+      "case": "unseen dense octave chord",
+      "codec": "synth WAV-equivalent",
+      "heldout": true,
+      "truth": [
+        {
+          "pitch": 48,
+          "start": 0.17,
+          "duration": 0.86
+        },
+        {
+          "pitch": 52,
+          "start": 0.17,
+          "duration": 0.86
+        },
+        {
+          "pitch": 55,
+          "start": 0.17,
+          "duration": 0.86
+        },
+        {
+          "pitch": 60,
+          "start": 0.17,
+          "duration": 0.86
+        },
+        {
+          "pitch": 64,
+          "start": 0.17,
+          "duration": 0.86
+        },
+        {
+          "pitch": 72,
+          "start": 0.17,
+          "duration": 0.86
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 6.49,
+        "notes": [
+          {
+            "pitch": 48,
+            "start": 0.16666666666666666,
+            "duration": 0.8541666666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.16666666666666666,
+            "duration": 0.8541666666666666
+          },
+          {
+            "pitch": 55,
+            "start": 0.16666666666666666,
+            "duration": 0.8333333333333334
+          },
+          {
+            "pitch": 60,
+            "start": 0.16666666666666666,
+            "duration": 0.8541666666666666
+          },
+          {
+            "pitch": 64,
+            "start": 0.16666666666666666,
+            "duration": 0.8541666666666666
+          },
+          {
+            "pitch": 72,
+            "start": 0.16666666666666666,
+            "duration": 0.8541666666666666
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 6,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 6.88,
+        "notes": [
+          {
+            "pitch": 60,
+            "start": 0.15625,
+            "duration": 0.8645833333333334
+          },
+          {
+            "pitch": 64,
+            "start": 0.15625,
+            "duration": 0.8645833333333334
+          },
+          {
+            "pitch": 72,
+            "start": 0.15625,
+            "duration": 0.8645833333333334
+          },
+          {
+            "pitch": 48,
+            "start": 0.16666666666666666,
+            "duration": 0.8541666666666666
+          },
+          {
+            "pitch": 52,
+            "start": 0.16666666666666666,
+            "duration": 0.8541666666666666
+          },
+          {
+            "pitch": 55,
+            "start": 0.16666666666666666,
+            "duration": 0.8645833333333334
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          72
+        ],
+        "parts": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          72
+        ],
+        "export": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          72
+        ]
+      }
+    },
+    {
+      "case": "unseen displaced lead over harmony",
+      "codec": "synth WAV-equivalent",
+      "heldout": true,
+      "truth": [
+        {
+          "pitch": 50,
+          "start": 0.44,
+          "duration": 1.28
+        },
+        {
+          "pitch": 54,
+          "start": 0.44,
+          "duration": 1.28
+        },
+        {
+          "pitch": 57,
+          "start": 0.44,
+          "duration": 1.28
+        },
+        {
+          "pitch": 74,
+          "start": 0.71,
+          "duration": 0.36
+        },
+        {
+          "pitch": 72,
+          "start": 1.22,
+          "duration": 0.34
+        }
+      ],
+      "baseline": {
+        "strict": {
+          "correct": 3,
+          "extra": 2,
+          "missing": 2
+        },
+        "lenient": {
+          "correct": 5,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 14.61,
+        "notes": [
+          {
+            "pitch": 50,
+            "start": 0.4166666666666667,
+            "duration": 1.28125
+          },
+          {
+            "pitch": 54,
+            "start": 0.4166666666666667,
+            "duration": 1.28125
+          },
+          {
+            "pitch": 57,
+            "start": 0.4166666666666667,
+            "duration": 1.3020833333333333
+          },
+          {
+            "pitch": 74,
+            "start": 0.625,
+            "duration": 0.375
+          },
+          {
+            "pitch": 72,
+            "start": 1.1145833333333333,
+            "duration": 0.3958333333333333
+          }
+        ]
+      },
+      "candidate": {
+        "strict": {
+          "correct": 5,
+          "extra": 0,
+          "missing": 0
+        },
+        "lenient": {
+          "correct": 5,
+          "extra": 0,
+          "missing": 0
+        },
+        "ms": 16.53,
+        "notes": [
+          {
+            "pitch": 50,
+            "start": 0.4375,
+            "duration": 1.2916666666666667
+          },
+          {
+            "pitch": 54,
+            "start": 0.4375,
+            "duration": 1.2916666666666667
+          },
+          {
+            "pitch": 57,
+            "start": 0.4375,
+            "duration": 1.2916666666666667
+          },
+          {
+            "pitch": 74,
+            "start": 0.6979166666666666,
+            "duration": 0.3645833333333333
+          },
+          {
+            "pitch": 72,
+            "start": 1.21875,
+            "duration": 0.3541666666666667
+          }
+        ]
+      },
+      "stages": {
+        "analysis": [
+          50,
+          54,
+          57,
+          72,
+          74
+        ],
+        "parts": [
+          50,
+          54,
+          57,
+          72,
+          74
+        ],
+        "export": [
+          50,
+          54,
+          57,
+          72,
+          74
+        ]
+      }
+    }
+  ]
+}

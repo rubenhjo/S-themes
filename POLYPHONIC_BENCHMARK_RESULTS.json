@@ -1,0 +1,2052 @@
+{
+  "rules": {
+    "lenient": "correct pitch, onset+offset within ±200ms",
+    "strict": "correct pitch, onset<=50ms, offset<=max(50ms,20% note duration)"
+  },
+  "aggregate": {
+    "all_lenient": {
+      "before": {
+        "tp": 60,
+        "fp": 16,
+        "fn": 30,
+        "precision": 0.7894736842105263,
+        "recall": 0.6666666666666666,
+        "f1": 0.7228915662650601
+      },
+      "after": {
+        "tp": 84,
+        "fp": 14,
+        "fn": 6,
+        "precision": 0.8571428571428571,
+        "recall": 0.9333333333333333,
+        "f1": 0.8936170212765957
+      }
+    },
+    "heldout_lenient": {
+      "before": {
+        "tp": 18,
+        "fp": 4,
+        "fn": 6,
+        "precision": 0.8181818181818182,
+        "recall": 0.75,
+        "f1": 0.7826086956521738
+      },
+      "after": {
+        "tp": 22,
+        "fp": 4,
+        "fn": 2,
+        "precision": 0.8461538461538461,
+        "recall": 0.9166666666666666,
+        "f1": 0.8799999999999999
+      }
+    },
+    "training_lenient": {
+      "before": {
+        "tp": 42,
+        "fp": 12,
+        "fn": 24,
+        "precision": 0.7777777777777778,
+        "recall": 0.6363636363636364,
+        "f1": 0.7000000000000001
+      },
+      "after": {
+        "tp": 62,
+        "fp": 10,
+        "fn": 4,
+        "precision": 0.8611111111111112,
+        "recall": 0.9393939393939394,
+        "f1": 0.8985507246376813
+      }
+    },
+    "all_strict": {
+      "before": {
+        "tp": 48,
+        "fp": 28,
+        "fn": 42,
+        "precision": 0.631578947368421,
+        "recall": 0.5333333333333333,
+        "f1": 0.5783132530120482
+      },
+      "after": {
+        "tp": 78,
+        "fp": 20,
+        "fn": 12,
+        "precision": 0.7959183673469388,
+        "recall": 0.8666666666666667,
+        "f1": 0.8297872340425533
+      }
+    },
+    "heldout_strict": {
+      "before": {
+        "tp": 10,
+        "fp": 12,
+        "fn": 14,
+        "precision": 0.45454545454545453,
+        "recall": 0.4166666666666667,
+        "f1": 0.43478260869565216
+      },
+      "after": {
+        "tp": 18,
+        "fp": 8,
+        "fn": 6,
+        "precision": 0.6923076923076923,
+        "recall": 0.75,
+        "f1": 0.7199999999999999
+      }
+    },
+    "training_strict": {
+      "before": {
+        "tp": 38,
+        "fp": 16,
+        "fn": 28,
+        "precision": 0.7037037037037037,
+        "recall": 0.5757575757575758,
+        "f1": 0.6333333333333334
+      },
+      "after": {
+        "tp": 60,
+        "fp": 12,
+        "fn": 6,
+        "precision": 0.8333333333333334,
+        "recall": 0.9090909090909091,
+        "f1": 0.8695652173913043
+      }
+    }
+  },
+  "rows": [
+    {
+      "case": "four-note chord",
+      "codec": "wav",
+      "heldout": false,
+      "truth": [
+        48,
+        52,
+        55,
+        60
+      ],
+      "old": {
+        "elapsedMs": 35.94,
+        "residentMiB": 36.6,
+        "analysis": [
+          48,
+          52,
+          55
+        ],
+        "voices": [
+          48,
+          52,
+          55
+        ],
+        "sseq": [
+          48,
+          52,
+          55
+        ],
+        "notes": 3,
+        "bytes": 49,
+        "error": null,
+        "lenient": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 1,
+          "f1": 0.8571,
+          "falsePitches": [],
+          "missedPitches": [
+            60
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 1,
+          "f1": 0.8571,
+          "falsePitches": [],
+          "missedPitches": [
+            60
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 39.27,
+        "residentMiB": 36.2,
+        "analysis": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "voices": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "sseq": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "notes": 4,
+        "bytes": 52,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "four-note chord",
+      "codec": "mp3",
+      "heldout": false,
+      "truth": [
+        48,
+        52,
+        55,
+        60
+      ],
+      "old": {
+        "elapsedMs": 19.33,
+        "residentMiB": 36.8,
+        "analysis": [
+          48,
+          52,
+          55
+        ],
+        "voices": [
+          48,
+          52,
+          55
+        ],
+        "sseq": [
+          48,
+          52,
+          55
+        ],
+        "notes": 3,
+        "bytes": 49,
+        "error": null,
+        "lenient": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 1,
+          "f1": 0.8571,
+          "falsePitches": [],
+          "missedPitches": [
+            60
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 1,
+          "f1": 0.8571,
+          "falsePitches": [],
+          "missedPitches": [
+            60
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 19.63,
+        "residentMiB": 43.4,
+        "analysis": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "voices": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "sseq": [
+          48,
+          52,
+          55,
+          60
+        ],
+        "notes": 4,
+        "bytes": 52,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "six-note chord",
+      "codec": "wav",
+      "heldout": false,
+      "truth": [
+        48,
+        52,
+        55,
+        60,
+        64,
+        67
+      ],
+      "old": {
+        "elapsedMs": 12.07,
+        "residentMiB": 45.4,
+        "analysis": [
+          48,
+          52,
+          55
+        ],
+        "voices": [
+          48,
+          52,
+          55
+        ],
+        "sseq": [
+          48,
+          52,
+          55
+        ],
+        "notes": 3,
+        "bytes": 49,
+        "error": null,
+        "lenient": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 3,
+          "f1": 0.6667,
+          "falsePitches": [],
+          "missedPitches": [
+            60,
+            64,
+            67
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 3,
+          "f1": 0.6667,
+          "falsePitches": [],
+          "missedPitches": [
+            60,
+            64,
+            67
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 22.69,
+        "residentMiB": 48.9,
+        "analysis": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "voices": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "sseq": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "notes": 6,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "six-note chord",
+      "codec": "mp3",
+      "heldout": false,
+      "truth": [
+        48,
+        52,
+        55,
+        60,
+        64,
+        67
+      ],
+      "old": {
+        "elapsedMs": 12.01,
+        "residentMiB": 48.2,
+        "analysis": [
+          48,
+          52,
+          55
+        ],
+        "voices": [
+          48,
+          52,
+          55
+        ],
+        "sseq": [
+          48,
+          52,
+          55
+        ],
+        "notes": 3,
+        "bytes": 49,
+        "error": null,
+        "lenient": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 3,
+          "f1": 0.6667,
+          "falsePitches": [],
+          "missedPitches": [
+            60,
+            64,
+            67
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 3,
+          "f1": 0.6667,
+          "falsePitches": [],
+          "missedPitches": [
+            60,
+            64,
+            67
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 11.29,
+        "residentMiB": 48.2,
+        "analysis": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "voices": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "sseq": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67
+        ],
+        "notes": 6,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "strong harmonics",
+      "codec": "wav",
+      "heldout": false,
+      "truth": [
+        57
+      ],
+      "old": {
+        "elapsedMs": 17.2,
+        "residentMiB": 48.2,
+        "analysis": [
+          57
+        ],
+        "voices": [
+          57
+        ],
+        "sseq": [
+          57
+        ],
+        "notes": 1,
+        "bytes": 43,
+        "error": null,
+        "lenient": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      },
+      "new": {
+        "elapsedMs": 20.07,
+        "residentMiB": 48.2,
+        "analysis": [
+          57
+        ],
+        "voices": [
+          57
+        ],
+        "sseq": [
+          57
+        ],
+        "notes": 1,
+        "bytes": 43,
+        "error": null,
+        "lenient": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "strong harmonics",
+      "codec": "mp3",
+      "heldout": false,
+      "truth": [
+        57
+      ],
+      "old": {
+        "elapsedMs": 18.7,
+        "residentMiB": 48.7,
+        "analysis": [
+          57
+        ],
+        "voices": [
+          57
+        ],
+        "sseq": [
+          57
+        ],
+        "notes": 1,
+        "bytes": 43,
+        "error": null,
+        "lenient": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      },
+      "new": {
+        "elapsedMs": 15.88,
+        "residentMiB": 48.7,
+        "analysis": [
+          57
+        ],
+        "voices": [
+          57
+        ],
+        "sseq": [
+          57
+        ],
+        "notes": 1,
+        "bytes": 43,
+        "error": null,
+        "lenient": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "eight-note chord",
+      "codec": "wav",
+      "heldout": false,
+      "truth": [
+        48,
+        52,
+        55,
+        60,
+        64,
+        67,
+        71,
+        74
+      ],
+      "old": {
+        "elapsedMs": 11.15,
+        "residentMiB": 49.6,
+        "analysis": [
+          48,
+          52,
+          55,
+          86
+        ],
+        "voices": [
+          48,
+          52,
+          55,
+          86
+        ],
+        "sseq": [
+          48,
+          52,
+          55,
+          86
+        ],
+        "notes": 4,
+        "bytes": 54,
+        "error": null,
+        "lenient": {
+          "tp": 3,
+          "fp": 1,
+          "fn": 5,
+          "f1": 0.5,
+          "falsePitches": [
+            86
+          ],
+          "missedPitches": [
+            60,
+            64,
+            67,
+            71,
+            74
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 1,
+          "fn": 5,
+          "f1": 0.5,
+          "falsePitches": [
+            86
+          ],
+          "missedPitches": [
+            60,
+            64,
+            67,
+            71,
+            74
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 19.33,
+        "residentMiB": 49.6,
+        "analysis": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "voices": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "sseq": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "notes": 8,
+        "bytes": 64,
+        "error": null,
+        "lenient": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "eight-note chord",
+      "codec": "mp3",
+      "heldout": false,
+      "truth": [
+        48,
+        52,
+        55,
+        60,
+        64,
+        67,
+        71,
+        74
+      ],
+      "old": {
+        "elapsedMs": 12.5,
+        "residentMiB": 50,
+        "analysis": [
+          48,
+          52,
+          55,
+          86
+        ],
+        "voices": [
+          48,
+          52,
+          55,
+          86
+        ],
+        "sseq": [
+          48,
+          52,
+          55,
+          86
+        ],
+        "notes": 4,
+        "bytes": 54,
+        "error": null,
+        "lenient": {
+          "tp": 3,
+          "fp": 1,
+          "fn": 5,
+          "f1": 0.5,
+          "falsePitches": [
+            86
+          ],
+          "missedPitches": [
+            60,
+            64,
+            67,
+            71,
+            74
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 1,
+          "fn": 5,
+          "f1": 0.5,
+          "falsePitches": [
+            86
+          ],
+          "missedPitches": [
+            60,
+            64,
+            67,
+            71,
+            74
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 21.24,
+        "residentMiB": 50,
+        "analysis": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "voices": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "sseq": [
+          48,
+          52,
+          55,
+          60,
+          64,
+          67,
+          71,
+          74
+        ],
+        "notes": 8,
+        "bytes": 64,
+        "error": null,
+        "lenient": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "four C4 repeats",
+      "codec": "wav",
+      "heldout": false,
+      "truth": [
+        60
+      ],
+      "old": {
+        "elapsedMs": 8.69,
+        "residentMiB": 50.6,
+        "analysis": [
+          60
+        ],
+        "voices": [
+          60
+        ],
+        "sseq": [
+          60
+        ],
+        "notes": 4,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      },
+      "new": {
+        "elapsedMs": 6.06,
+        "residentMiB": 50.6,
+        "analysis": [
+          60
+        ],
+        "voices": [
+          60
+        ],
+        "sseq": [
+          60
+        ],
+        "notes": 4,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "four C4 repeats",
+      "codec": "mp3",
+      "heldout": false,
+      "truth": [
+        60
+      ],
+      "old": {
+        "elapsedMs": 5.91,
+        "residentMiB": 50.8,
+        "analysis": [
+          60
+        ],
+        "voices": [
+          60
+        ],
+        "sseq": [
+          60
+        ],
+        "notes": 4,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      },
+      "new": {
+        "elapsedMs": 7.68,
+        "residentMiB": 50.8,
+        "analysis": [
+          60
+        ],
+        "voices": [
+          60
+        ],
+        "sseq": [
+          60
+        ],
+        "notes": 4,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "E2-G2-A2-E2 bass",
+      "codec": "wav",
+      "heldout": false,
+      "truth": [
+        40,
+        43,
+        45
+      ],
+      "old": {
+        "elapsedMs": 45.1,
+        "residentMiB": 55.7,
+        "analysis": [
+          40,
+          43,
+          45
+        ],
+        "voices": [
+          40,
+          43,
+          45
+        ],
+        "sseq": [
+          40,
+          43,
+          45
+        ],
+        "notes": 4,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      },
+      "new": {
+        "elapsedMs": 32.15,
+        "residentMiB": 55.7,
+        "analysis": [
+          40,
+          43,
+          45
+        ],
+        "voices": [
+          40,
+          43,
+          45
+        ],
+        "sseq": [
+          40,
+          43,
+          45
+        ],
+        "notes": 4,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "E2-G2-A2-E2 bass",
+      "codec": "mp3",
+      "heldout": false,
+      "truth": [
+        40,
+        43,
+        45
+      ],
+      "old": {
+        "elapsedMs": 15.55,
+        "residentMiB": 58.6,
+        "analysis": [
+          40,
+          43,
+          45
+        ],
+        "voices": [
+          40,
+          43,
+          45
+        ],
+        "sseq": [
+          40,
+          43,
+          45
+        ],
+        "notes": 4,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      },
+      "new": {
+        "elapsedMs": 24.83,
+        "residentMiB": 56.1,
+        "analysis": [
+          40,
+          43,
+          45
+        ],
+        "voices": [
+          40,
+          43,
+          45
+        ],
+        "sseq": [
+          40,
+          43,
+          45
+        ],
+        "notes": 4,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "melody after 350ms silence",
+      "codec": "wav",
+      "heldout": false,
+      "truth": [
+        48,
+        52,
+        55,
+        67,
+        69,
+        72
+      ],
+      "old": {
+        "elapsedMs": 13.6,
+        "residentMiB": 56.3,
+        "analysis": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          69,
+          72
+        ],
+        "voices": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          69,
+          72
+        ],
+        "sseq": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          69,
+          72
+        ],
+        "notes": 8,
+        "bytes": 68,
+        "error": null,
+        "lenient": {
+          "tp": 3,
+          "fp": 5,
+          "fn": 3,
+          "f1": 0.4286,
+          "falsePitches": [
+            52,
+            55,
+            53,
+            60,
+            64
+          ],
+          "missedPitches": [
+            67,
+            52,
+            55
+          ]
+        },
+        "strict": {
+          "tp": 1,
+          "fp": 7,
+          "fn": 5,
+          "f1": 0.1429,
+          "falsePitches": [
+            52,
+            55,
+            69,
+            53,
+            60,
+            64,
+            72
+          ],
+          "missedPitches": [
+            67,
+            69,
+            52,
+            55,
+            72
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 14.72,
+        "residentMiB": 56.3,
+        "analysis": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          67,
+          69,
+          72
+        ],
+        "voices": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          67,
+          69,
+          72
+        ],
+        "sseq": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          67,
+          69,
+          72
+        ],
+        "notes": 9,
+        "bytes": 75,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 5,
+          "fn": 2,
+          "f1": 0.5333,
+          "falsePitches": [
+            52,
+            55,
+            60,
+            64,
+            53
+          ],
+          "missedPitches": [
+            52,
+            55
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 6,
+          "fn": 3,
+          "f1": 0.4,
+          "falsePitches": [
+            52,
+            55,
+            67,
+            60,
+            64,
+            53
+          ],
+          "missedPitches": [
+            67,
+            52,
+            55
+          ]
+        }
+      }
+    },
+    {
+      "case": "melody after 350ms silence",
+      "codec": "mp3",
+      "heldout": false,
+      "truth": [
+        48,
+        52,
+        55,
+        67,
+        69,
+        72
+      ],
+      "old": {
+        "elapsedMs": 14.27,
+        "residentMiB": 56.4,
+        "analysis": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          69,
+          72
+        ],
+        "voices": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          69,
+          72
+        ],
+        "sseq": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          69,
+          72
+        ],
+        "notes": 8,
+        "bytes": 68,
+        "error": null,
+        "lenient": {
+          "tp": 3,
+          "fp": 5,
+          "fn": 3,
+          "f1": 0.4286,
+          "falsePitches": [
+            52,
+            55,
+            53,
+            60,
+            64
+          ],
+          "missedPitches": [
+            67,
+            52,
+            55
+          ]
+        },
+        "strict": {
+          "tp": 1,
+          "fp": 7,
+          "fn": 5,
+          "f1": 0.1429,
+          "falsePitches": [
+            52,
+            55,
+            69,
+            53,
+            60,
+            64,
+            72
+          ],
+          "missedPitches": [
+            67,
+            69,
+            52,
+            55,
+            72
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 15.27,
+        "residentMiB": 56.1,
+        "analysis": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          67,
+          69,
+          72
+        ],
+        "voices": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          67,
+          69,
+          72
+        ],
+        "sseq": [
+          48,
+          52,
+          53,
+          55,
+          60,
+          64,
+          67,
+          69,
+          72
+        ],
+        "notes": 9,
+        "bytes": 75,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 5,
+          "fn": 2,
+          "f1": 0.5333,
+          "falsePitches": [
+            52,
+            55,
+            60,
+            64,
+            53
+          ],
+          "missedPitches": [
+            52,
+            55
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 6,
+          "fn": 3,
+          "f1": 0.4,
+          "falsePitches": [
+            52,
+            55,
+            67,
+            60,
+            64,
+            53
+          ],
+          "missedPitches": [
+            67,
+            52,
+            55
+          ]
+        }
+      }
+    },
+    {
+      "case": "heldout staggered six instruments",
+      "codec": "wav",
+      "heldout": true,
+      "truth": [
+        45,
+        52,
+        57,
+        61,
+        66,
+        73
+      ],
+      "old": {
+        "elapsedMs": 7.39,
+        "residentMiB": 56.2,
+        "analysis": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "voices": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "sseq": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "notes": 7,
+        "bytes": 71,
+        "error": null,
+        "lenient": {
+          "tp": 5,
+          "fp": 2,
+          "fn": 1,
+          "f1": 0.7692,
+          "falsePitches": [
+            73,
+            73
+          ],
+          "missedPitches": [
+            73
+          ]
+        },
+        "strict": {
+          "tp": 1,
+          "fp": 6,
+          "fn": 5,
+          "f1": 0.1538,
+          "falsePitches": [
+            52,
+            57,
+            61,
+            66,
+            73,
+            73
+          ],
+          "missedPitches": [
+            52,
+            57,
+            61,
+            66,
+            73
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 7.6,
+        "residentMiB": 56.2,
+        "analysis": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "voices": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "sseq": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "notes": 7,
+        "bytes": 71,
+        "error": null,
+        "lenient": {
+          "tp": 5,
+          "fp": 2,
+          "fn": 1,
+          "f1": 0.7692,
+          "falsePitches": [
+            73,
+            73
+          ],
+          "missedPitches": [
+            73
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 4,
+          "fn": 3,
+          "f1": 0.4615,
+          "falsePitches": [
+            52,
+            57,
+            73,
+            73
+          ],
+          "missedPitches": [
+            52,
+            57,
+            73
+          ]
+        }
+      }
+    },
+    {
+      "case": "heldout staggered six instruments",
+      "codec": "mp3",
+      "heldout": true,
+      "truth": [
+        45,
+        52,
+        57,
+        61,
+        66,
+        73
+      ],
+      "old": {
+        "elapsedMs": 9.03,
+        "residentMiB": 56.3,
+        "analysis": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "voices": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "sseq": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "notes": 7,
+        "bytes": 71,
+        "error": null,
+        "lenient": {
+          "tp": 5,
+          "fp": 2,
+          "fn": 1,
+          "f1": 0.7692,
+          "falsePitches": [
+            73,
+            73
+          ],
+          "missedPitches": [
+            73
+          ]
+        },
+        "strict": {
+          "tp": 1,
+          "fp": 6,
+          "fn": 5,
+          "f1": 0.1538,
+          "falsePitches": [
+            52,
+            57,
+            61,
+            66,
+            73,
+            73
+          ],
+          "missedPitches": [
+            52,
+            57,
+            61,
+            66,
+            73
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 10.45,
+        "residentMiB": 56.3,
+        "analysis": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "voices": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "sseq": [
+          45,
+          52,
+          57,
+          61,
+          66,
+          73
+        ],
+        "notes": 7,
+        "bytes": 71,
+        "error": null,
+        "lenient": {
+          "tp": 5,
+          "fp": 2,
+          "fn": 1,
+          "f1": 0.7692,
+          "falsePitches": [
+            73,
+            73
+          ],
+          "missedPitches": [
+            73
+          ]
+        },
+        "strict": {
+          "tp": 3,
+          "fp": 4,
+          "fn": 3,
+          "f1": 0.4615,
+          "falsePitches": [
+            52,
+            57,
+            73,
+            73
+          ],
+          "missedPitches": [
+            52,
+            57,
+            73
+          ]
+        }
+      }
+    },
+    {
+      "case": "heldout dense chord",
+      "codec": "wav",
+      "heldout": true,
+      "truth": [
+        50,
+        54,
+        57,
+        62,
+        66,
+        69
+      ],
+      "old": {
+        "elapsedMs": 6.19,
+        "residentMiB": 53.9,
+        "analysis": [
+          50,
+          54,
+          57,
+          66
+        ],
+        "voices": [
+          50,
+          54,
+          57,
+          66
+        ],
+        "sseq": [
+          50,
+          54,
+          57,
+          66
+        ],
+        "notes": 4,
+        "bytes": 52,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 2,
+          "f1": 0.8,
+          "falsePitches": [],
+          "missedPitches": [
+            62,
+            69
+          ]
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 2,
+          "f1": 0.8,
+          "falsePitches": [],
+          "missedPitches": [
+            62,
+            69
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 6.81,
+        "residentMiB": 53.9,
+        "analysis": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "voices": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "sseq": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "notes": 6,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    },
+    {
+      "case": "heldout dense chord",
+      "codec": "mp3",
+      "heldout": true,
+      "truth": [
+        50,
+        54,
+        57,
+        62,
+        66,
+        69
+      ],
+      "old": {
+        "elapsedMs": 6.92,
+        "residentMiB": 53.9,
+        "analysis": [
+          50,
+          54,
+          57,
+          66
+        ],
+        "voices": [
+          50,
+          54,
+          57,
+          66
+        ],
+        "sseq": [
+          50,
+          54,
+          57,
+          66
+        ],
+        "notes": 4,
+        "bytes": 52,
+        "error": null,
+        "lenient": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 2,
+          "f1": 0.8,
+          "falsePitches": [],
+          "missedPitches": [
+            62,
+            69
+          ]
+        },
+        "strict": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 2,
+          "f1": 0.8,
+          "falsePitches": [],
+          "missedPitches": [
+            62,
+            69
+          ]
+        }
+      },
+      "new": {
+        "elapsedMs": 7.3,
+        "residentMiB": 53.9,
+        "analysis": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "voices": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "sseq": [
+          50,
+          54,
+          57,
+          62,
+          66,
+          69
+        ],
+        "notes": 6,
+        "bytes": 58,
+        "error": null,
+        "lenient": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        },
+        "strict": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "f1": 1,
+          "falsePitches": [],
+          "missedPitches": []
+        }
+      }
+    }
+  ]
+}

@@ -63,7 +63,7 @@ async def main():
     if path=='/':
      body=b'<html><body>sigma-themes browser test origin</body></html>'
      content_type='text/html; charset=utf-8'
-    elif path in ('/sseq_transcribe_worker.js','/sseq_transcribe.js'):
+    elif path in ('/sseq_transcribe_worker.js','/sseq_transcribe.js','/sigma_note_refine.js'):
      body=(ROOT/path.removeprefix('/')).read_bytes()
      content_type='text/javascript; charset=utf-8'
     else:

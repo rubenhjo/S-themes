@@ -32,6 +32,8 @@ jobs:
           ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 \
             "$RUNNER_TEMP/sigma-ci-ffmpeg-check.mp3"
           rm -f "$RUNNER_TEMP/sigma-ci-ffmpeg-check.mp3"
+      - name: Generate reproducible polyphonic WAV/MP3 fixtures
+        run: node tests/create-polyphony-fixtures.mjs
       - name: Validate release file layout
         run: node scripts/check-release-layout.mjs
       - name: Complete local verification command
@@ -110,6 +112,8 @@ jobs:
             sudo apt-get update -qq
             sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg libavcodec-extra
           fi
+      - name: Generate reproducible polyphonic WAV/MP3 fixtures
+        run: node tests/create-polyphony-fixtures.mjs
       - name: Run isolated browser regression with bounded runtime
         env:
           SIGMA_BROWSER_USE_REAL_CRYPTO: '1'
